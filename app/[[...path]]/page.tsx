@@ -9,15 +9,15 @@ import { ShadowGridApp } from "../../components/ShadowGridApp";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "ShadowGrid // Rain City Host",
-  description: "Private campaign Matrix host for runners and Game Masters.",
+  title: "ShadowGrid // Хост Дождливого города",
+  description: "Частный хост Матрицы для раннеров и Мастеров игры.",
 };
 
 const publicPages = new Set(["login", "access-denied", "account-restricted", "maintenance"]);
 
 function credentialOnlySnapshot(): CampaignSnapshot {
   return {
-    campaignName: "RAIN CITY // CREDENTIAL GATE",
+    campaignName: "ДОЖДЛИВЫЙ ГОРОД // ШЛЮЗ ДОСТУПА",
     campaignTime: "2080-11-18T04:17:00-08:00",
     announcements: [], hosts: [], threads: [], posts: [], jobs: [], products: [], vendors: [], contacts: [],
     orders: [], inventory: [], conversations: [], players: [], audit: [], ledger: [], clearances: [], factions: [], categories: [],
@@ -30,9 +30,9 @@ export default async function ShadowGridRoute({ params }: { params: Promise<{ pa
   if (!route) redirect("/login");
   if (publicPages.has(route)) {
     if (route === "login") return <LoginScreen />;
-    if (route === "access-denied") return <PublicNotice code="ACCESS DENIED" title="Clearance does not match this node" body="The host disclosed no metadata. Return to a permitted route or contact your Game Master." />;
-    if (route === "account-restricted") return <PublicNotice code="ACCOUNT RESTRICTED" title="Runner privileges have been limited" body="The campaign authority has restricted one or more account capabilities. Restrictions are configurable and may not affect login." />;
-    return <PublicNotice code="HOST MAINTENANCE" title="Local relay temporarily sealed" body="Campaign data remains intact. The Game Master will restore the route when the host is ready." />;
+    if (route === "access-denied") return <PublicNotice code="ДОСТУП ЗАПРЕЩЁН" title="Уровень допуска не соответствует этому узлу" body="Хост не раскрыл метаданные. Вернитесь на разрешённый маршрут или свяжитесь с Мастером игры." />;
+    if (route === "account-restricted") return <PublicNotice code="АККАУНТ ОГРАНИЧЕН" title="Привилегии раннера ограничены" body="Администрация кампании ограничила одну или несколько возможностей аккаунта. Ограничения настраиваются отдельно и могут не запрещать вход." />;
+    return <PublicNotice code="ОБСЛУЖИВАНИЕ ХОСТА" title="Локальный ретранслятор временно изолирован" body="Данные кампании сохранены. Мастер игры восстановит маршрут, когда хост будет готов." />;
   }
   const requestHeaders = await headers();
   const viewer = await getViewerFromCookieHeader(requestHeaders.get("cookie"));

@@ -176,11 +176,11 @@ export async function authenticate(loginName: string, password: string, clientAd
   await ensureCampaignReady();
   const security = await getD1().prepare("SELECT value FROM campaign_settings WHERE key='seed_version'").first<{ value: string }>();
   if (security?.value !== "3") {
-    return { ok: false, status: 503, message: "Owner bootstrap is locked. Configure SHADOWGRID_BOOTSTRAP_PASSWORD and restart the host." };
+    return { ok: false, status: 503, message: "Начальная настройка владельца заблокирована. Настройте SHADOWGRID_BOOTSTRAP_PASSWORD и перезапустите хост." };
   }
   const normalized = loginName.trim().toLowerCase();
   const transientKey = throttleKey(normalized, clientAddress);
-  if (isTransientlyLocked(transientKey)) return { ok: false, status: 429, message: "Too many failed handshakes. Try again after the lockout window." };
+  if (isTransientlyLocked(transientKey)) return { ok: false, status: 429, message: "Слишком много неудачных рукопожатий. Повторите попытку после окончания блокировки." };
   const db = getD1();
   const row = await db.prepare(`SELECT id,password_hash,password_salt,password_iterations,enabled,
       temporary_password_expires_at,failed_login_count,locked_until
@@ -194,18 +194,18 @@ export async function authenticate(loginName: string, password: string, clientAd
     failed_login_count: number;
     locked_until: string | null;
   }>();
-  const generic = { ok: false as const, status: 401, message: "Assigned handle or passcode rejected." };
+  const generic = { ok: false as const, status: 401, message: "Назначенный псевдоним или код доступа отклонён." };
   if (!row) {
     await runDummyPasswordCheck(password);
     recordTransientFailure(transientKey);
     return generic;
   }
-  if (!row.enabled) return { ok: false, status: 403, message: "This account is disabled. Contact the Game Master." };
+  if (!row.enabled) return { ok: false, status: 403, message: "Этот аккаунт отключён. Свяжитесь с Мастером игры." };
   if (row.locked_until && new Date(row.locked_until).getTime() > Date.now()) {
-    return { ok: false, status: 429, message: "Too many failed handshakes. Try again after the lockout window." };
+    return { ok: false, status: 429, message: "Слишком много неудачных рукопожатий. Повторите попытку после окончания блокировки." };
   }
   if (row.temporary_password_expires_at && new Date(row.temporary_password_expires_at).getTime() <= Date.now()) {
-    return { ok: false, status: 403, message: "Temporary passcode expired. Ask the Game Master for a reset." };
+    return { ok: false, status: 403, message: "Срок временного кода истёк. Попросите Мастера игры сбросить его." };
   }
   const valid = await verifyPassword(password, row.password_hash, row.password_salt, row.password_iterations);
   if (!valid) {
@@ -216,7 +216,7 @@ export async function authenticate(loginName: string, password: string, clientAd
       WHERE id=?`).bind(row.id).run();
     const failureState = await db.prepare("SELECT failed_login_count,locked_until FROM users WHERE id=?").bind(row.id).first<{ failed_login_count: number; locked_until: string | null }>();
     recordTransientFailure(transientKey);
-    return (failureState?.failed_login_count ?? 0) >= 5 ? { ok: false, status: 429, message: "Handshake throttled for fifteen minutes." } : generic;
+    return (failureState?.failed_login_count ?? 0) >= 5 ? { ok: false, status: 429, message: "Рукопожатия заблокированы на пятнадцать минут." } : generic;
   }
   transientLoginThrottle.delete(transientKey);
   await db.prepare("UPDATE users SET failed_login_count = 0, locked_until = NULL, last_login_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(row.id).run();

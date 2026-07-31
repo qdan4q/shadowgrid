@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { IBM_Plex_Mono, Inter } from "next/font/google";
+import { RussianTextLayer } from "../components/RussianTextLayer";
 import "./globals.css";
 
 const interfaceSans = Inter({ variable: "--font-interface", subsets: ["latin"] });
 const terminalMono = IBM_Plex_Mono({ variable: "--font-terminal", subsets: ["latin"], weight: ["400", "500", "600"] });
 
-const description = "A private, original Shadowrun campaign Matrix forum and Game Master control host.";
+const description = "Частный форум Матрицы для кампании Shadowrun и управляющий хост Мастера игры.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
@@ -22,18 +23,18 @@ export async function generateMetadata(): Promise<Metadata> {
   const socialImage = new URL("/og.png", metadataBase).toString();
   return {
     metadataBase,
-    title: { default: "ShadowGrid // Rain City Host", template: "%s // ShadowGrid" },
+    title: { default: "ShadowGrid // Хост Дождливого города", template: "%s // ShadowGrid" },
     description,
     applicationName: "ShadowGrid",
     robots: { index: false, follow: false },
     openGraph: {
-      title: "ShadowGrid // Rain City Host",
+      title: "ShadowGrid // Хост Дождливого города",
       description,
       siteName: "ShadowGrid",
       type: "website",
-      images: [{ url: socialImage, width: 1760, height: 900, alt: "ShadowGrid private campaign host terminal interface" }],
+      images: [{ url: socialImage, width: 1760, height: 900, alt: "Терминальный интерфейс частного хоста кампании ShadowGrid" }],
     },
-    twitter: { card: "summary_large_image", title: "ShadowGrid // Rain City Host", description, images: [socialImage] },
+    twitter: { card: "summary_large_image", title: "ShadowGrid // Хост Дождливого города", description, images: [socialImage] },
   };
 }
 
@@ -46,8 +47,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${interfaceSans.variable} ${terminalMono.variable}`}>{children}</body>
+    <html lang="ru" suppressHydrationWarning>
+      <body className={`${interfaceSans.variable} ${terminalMono.variable}`}><RussianTextLayer />{children}</body>
     </html>
   );
 }

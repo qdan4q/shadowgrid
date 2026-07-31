@@ -51,7 +51,7 @@ const factionRows = [
 ] as const;
 
 const users: SeedUser[] = [
-  { id: "user-gm", login: "architect", alias: "BLACKROOT", role: "role-gm" },
+  { id: "user-gm", login: "Gamemaster", alias: "BLACKROOT", role: "role-gm" },
   { id: "user-agm", login: "oracle", alias: "GLASS_ORACLE", role: "role-assistant" },
   { id: "user-null", login: "null_shaman", alias: "NULL_SHAMAN", role: "role-player", character: "Eira Dusk", metatype: "Elf", archetype: "SHAMAN", faction: "faction-talismongers", clearance: "clearance-gold", reputation: 8, nuyen: 42000 },
   { id: "user-hex", login: "hexsaint", alias: "HEXSAINT", role: "role-player", character: "Milo Venn", metatype: "Human", archetype: "DECKER", faction: "faction-free-nodes", clearance: "clearance-silver", reputation: 5, nuyen: 26800 },
@@ -201,6 +201,7 @@ async function applySeedSecurityV3(db: D1Database, bootstrapPassword: string): P
       SET password_hash=?,password_salt=?,password_iterations=?,enabled=?,force_password_change=1,temporary_password_expires_at=NULL,updated_at=CURRENT_TIMESTAMP
       WHERE id=?`).bind(hashes[index].hash, hashes[index].salt, hashes[index].iterations, user.id === "user-gm" ? 1 : 0, user.id));
   statements.push(
+    db.prepare("UPDATE users SET login_name=?,updated_at=CURRENT_TIMESTAMP WHERE id='user-gm'").bind(users[0].login),
     db.prepare("UPDATE sessions SET revoked_at=CURRENT_TIMESTAMP WHERE revoked_at IS NULL"),
     db.prepare(`INSERT OR IGNORE INTO audit_logs (id,action,target_type,target_id,summary,after_state)
       VALUES ('audit-seed-security-v3','SEED_CREDENTIALS_ROTATED','Campaign','seed-accounts',

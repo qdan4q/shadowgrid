@@ -28,6 +28,27 @@ function json(payload: unknown, status = 200): NextResponse {
   return NextResponse.json(payload, { status, headers: { "Cache-Control": "no-store" } });
 }
 
+const campaignErrorsRu: Record<string, string> = {
+  PREVIEW_READ_ONLY: "Режим предпросмотра доступен только для чтения. Выйдите из него, чтобы выполнять действия.",
+  INVALID_PASSWORD: "Новый код доступа должен содержать не менее 12 символов.",
+  PASSWORD_MISMATCH: "Подтверждение нового кода доступа не совпадает.",
+  PASSWORD_UNCHANGED: "Выберите код доступа, отличный от временного.",
+  CURRENT_PASSWORD_REJECTED: "Текущий код доступа отклонён.",
+  INVALID_PURCHASE: "Некорректный запрос на покупку.", PLAYER_REQUIRED: "Покупать снаряжение может только аккаунт игрока.",
+  PRODUCT_NOT_FOUND: "Лот не найден.", PRODUCT_RESTRICTED: "Ваш текущий допуск не позволяет открыть этот лот.",
+  INSUFFICIENT_STOCK: "Запас продавца изменился до подтверждения.", INSUFFICIENT_FUNDS: "Для этого заказа недостаточно нуйен.",
+  FORBIDDEN: "Недостаточно прав для этой операции.", INVALID_PLAYER: "Некорректные данные игрока.",
+  INVALID_ACCESS_PROFILE: "Некорректный допуск или фракция.", DUPLICATE_PLAYER: "Логин или псевдоним раннера уже существует.",
+  INVALID_VENDOR: "Некорректные данные фиксера или продавца.", INVALID_PRODUCT: "Некорректные данные лота.",
+  INVALID_PRODUCT_RELATION: "Продавец или категория недоступны.", INVALID_ADJUSTMENT: "Некорректное изменение игрока.",
+  PLAYER_NOT_FOUND: "Игрок не найден.", NEGATIVE_BALANCE: "Изменение привело бы к отрицательному балансу.",
+  INVALID_CLEARANCE: "Уровень допуска не найден.", REPUTATION_OUT_OF_RANGE: "Репутация выйдет за настроенный диапазон.",
+  INVALID_PRODUCT_STATE: "Некорректное изменение состояния товара.", INVALID_ORDER_DECISION: "Некорректное решение по заказу.",
+  ORDER_ALREADY_PROCESSED: "Заказ больше не ожидает рассмотрения.", ACCOUNT_MISSING: "Счёт покупателя отсутствует.",
+  INVALID_HOST: "Некорректный хост Матрицы.", INVALID_THREAD: "Некорректная ветка.", POSTING_RESTRICTED: "Публикации для этого аккаунта ограничены.",
+  HOST_RESTRICTED: "Доступ к хосту запрещён.", INVALID_REPLY: "Некорректный ответ.", THREAD_LOCKED: "Ветка закрыта или недоступна.", THREAD_RESTRICTED: "Доступ к ветке запрещён.",
+};
+
 function validateMutationRequest(request: Request): NextResponse | null {
   const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
   if (!contentType.startsWith("application/json")) return json({ ok: false, error: "JSON requests are required." }, 415);
@@ -76,7 +97,7 @@ export async function POST(request: Request) {
     }
 
     const viewer = await getViewerFromCookieHeader(request.headers.get("cookie"));
-    if (!viewer) return json({ ok: false, error: "Session expired. Reconnect to the host." }, 401);
+    if (!viewer) return json({ ok: false, error: "Сессия истекла. Подключитесь к хосту заново." }, 401);
     if (action === "logout") {
       await revokeSession(viewer);
       const response = json({ ok: true, redirect: "/login" });
@@ -92,7 +113,7 @@ export async function POST(request: Request) {
       return json({ ok: true, redirect: viewer.actor.roles.includes("GAME_MASTER") ? "/gm" : "/dashboard" });
     }
     if (!viewer.isPreview && viewer.actor.forcePasswordChange) {
-      return json({ ok: false, error: "Change the assigned temporary passcode before using this host.", code: "PASSWORD_CHANGE_REQUIRED" }, 403);
+      return json({ ok: false, error: "Смените назначенный временный код доступа перед использованием хоста.", code: "PASSWORD_CHANGE_REQUIRED" }, 403);
     }
     if (action === "gm/preview") {
       const input = body as Record<string, unknown>;
@@ -113,12 +134,12 @@ export async function POST(request: Request) {
       "board/reply": () => replyThread(viewer, body, request),
     };
     const handler = handlers[action];
-    if (!handler) return json({ ok: false, error: "Unknown host command." }, 404);
+    if (!handler) return json({ ok: false, error: "Неизвестная команда хоста." }, 404);
     const result = await handler();
     return json({ ok: true, result });
   } catch (error) {
-    if (error instanceof CampaignError) return json({ ok: false, error: error.message, code: error.code }, error.status);
+    if (error instanceof CampaignError) return json({ ok: false, error: campaignErrorsRu[error.code] ?? error.message, code: error.code }, error.status);
     console.error("ShadowGrid action failed", error);
-    return json({ ok: false, error: "The host rejected the operation. No state was committed." }, 500);
+    return json({ ok: false, error: "Хост отклонил операцию. Состояние не было изменено." }, 500);
   }
 }
