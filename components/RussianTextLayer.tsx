@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 
 const exact = new Map<string, string>([
   ["Campaign authority overview", "Обзор управления кампанией"],
@@ -273,8 +273,16 @@ function translateElement(root: unknown): void {
 }
 
 export function RussianTextLayer() {
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const language = window.localStorage.getItem("shadowgrid.language") === "en" ? "en" : "ru";
+    document.documentElement.lang = language;
+    document.documentElement.dataset.language = language;
+    if (language === "en") {
+      document.documentElement.dataset.languageReady = "true";
+      return;
+    }
     translateElement(document.body);
+    document.documentElement.dataset.languageReady = "true";
     const observer = new MutationObserver((records) => {
       for (const record of records) {
         if (record.type === "characterData" && record.target.nodeType === Node.TEXT_NODE) {

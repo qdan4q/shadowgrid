@@ -4,8 +4,8 @@ import { IBM_Plex_Mono, Inter } from "next/font/google";
 import { RussianTextLayer } from "../components/RussianTextLayer";
 import "./globals.css";
 
-const interfaceSans = Inter({ variable: "--font-interface", subsets: ["latin"] });
-const terminalMono = IBM_Plex_Mono({ variable: "--font-terminal", subsets: ["latin"], weight: ["400", "500", "600"] });
+const interfaceSans = Inter({ variable: "--font-interface", subsets: ["cyrillic", "latin"] });
+const terminalMono = IBM_Plex_Mono({ variable: "--font-terminal", subsets: ["cyrillic", "latin"], weight: ["400", "500", "600"] });
 
 const description = "Частный форум Матрицы для кампании Shadowrun и управляющий хост Мастера игры.";
 
@@ -48,6 +48,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ru" suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: `try{document.documentElement.dataset.language=localStorage.getItem("shadowgrid.language")==="en"?"en":"ru"}catch(_){document.documentElement.dataset.language="ru"}` }} /></head>
       <body className={`${interfaceSans.variable} ${terminalMono.variable}`}><RussianTextLayer />{children}</body>
     </html>
   );
