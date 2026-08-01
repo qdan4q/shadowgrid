@@ -38,7 +38,7 @@ export function LoginScreen() {
         <header className="gateway-header">
           <div className="brand-mark" aria-hidden="true"><span>SG</span><b>⌁</b></div>
           <div>
-            <p className="eyebrow">ЧАСТНЫЙ ХОСТ КАМПАНИИ // ДОЖДЛИВЫЙ ГОРОД</p>
+            <p className="eyebrow">ЧАСТНЫЙ ТЕНЕВОЙ ХОСТ // ДОЖДЛИВЫЙ ГОРОД</p>
             <h1 id="login-title">SHADOW<span>GRID</span></h1>
             <p className="host-address">SG://SEA.00/ROOT-GATE · сборка 2080.11</p>
           </div>
@@ -47,7 +47,7 @@ export function LoginScreen() {
           <ShieldAlert size={18} aria-hidden="true" />
           <div><strong>РУКОПОЖАТИЕ ТЕНЕВОГО ХОСТА</strong><span>Наблюдение со стороны местной администрации Сетки не исключено.</span></div>
         </div>
-        <p className="gateway-copy">Введите назначенный псевдоним и код доступа. Незарегистрированные личности будут отклонены. Хост содержит только вымышленные данные настольной кампании.</p>
+        <p className="gateway-copy">Введите назначенный псевдоним и код доступа. Незарегистрированные личности будут отклонены. Все соединения проходят проверку сертификата и маршрута.</p>
         <form onSubmit={connect} className="login-form">
           <label><span>НАЗНАЧЕННЫЙ ПСЕВДОНИМ</span><div className="input-shell"><CircleDot size={15} aria-hidden="true" /><input name="loginName" autoComplete="username" required minLength={3} placeholder="псевдоним_раннера" /></div></label>
           <label><span>КОД ДОСТУПА</span><div className="input-shell"><KeyRound size={15} aria-hidden="true" /><input name="password" type="password" autoComplete="current-password" required minLength={8} placeholder="••••••••••••" /></div></label>
@@ -58,7 +58,7 @@ export function LoginScreen() {
           <p><RadioTower size={14} /> ТОЛЬКО НАЗНАЧЕННЫЕ АККАУНТЫ</p>
           <dl><div><dt>ПУБЛИЧНАЯ РЕГИСТРАЦИЯ</dt><dd>ОТКЛЮЧЕНА</dd></div><div><dt>ПЕРВОЕ РУКОПОЖАТИЕ</dt><dd>СМЕНИТЬ ВРЕМЕННЫЙ КОД</dd></div></dl>
         </div>
-        <footer><span>ПУБЛИЧНАЯ РЕГИСТРАЦИЯ: ОТКЛЮЧЕНА</span><span>РИСК ТРАССИРОВКИ: <b>ВЫМЫШЛЕННЫЙ</b></span></footer>
+        <footer><span>ПУБЛИЧНАЯ РЕГИСТРАЦИЯ: ОТКЛЮЧЕНА</span><span>РИСК ТРАССИРОВКИ: <b>НИЗКИЙ / 11%</b></span></footer>
       </section>
       <aside className="gateway-aside" aria-label="Диагностика соединения">
         <p>СОГЛАСОВАНИЕ МАРШРУТА</p>

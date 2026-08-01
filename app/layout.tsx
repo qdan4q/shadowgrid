@@ -7,7 +7,7 @@ import "./globals.css";
 const interfaceSans = Inter({ variable: "--font-interface", subsets: ["cyrillic", "latin"] });
 const terminalMono = IBM_Plex_Mono({ variable: "--font-terminal", subsets: ["cyrillic", "latin"], weight: ["400", "500", "600"] });
 
-const description = "Частный форум Матрицы для кампании Shadowrun и управляющий хост Мастера игры.";
+const description = "Закрытый узел Матрицы: теневые контракты, защищённые каналы и рынки Дождливого города.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
@@ -32,7 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       siteName: "ShadowGrid",
       type: "website",
-      images: [{ url: socialImage, width: 1760, height: 900, alt: "Терминальный интерфейс частного хоста кампании ShadowGrid" }],
+      images: [{ url: socialImage, width: 1760, height: 900, alt: "Терминальный интерфейс частного теневого хоста ShadowGrid" }],
     },
     twitter: { card: "summary_large_image", title: "ShadowGrid // Хост Дождливого города", description, images: [socialImage] },
   };

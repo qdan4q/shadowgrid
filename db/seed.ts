@@ -36,11 +36,11 @@ const permissionRows = [
   ["perm-economy", "manage_economy", "Manage economy", "Adjust balances, issue refunds and inspect the ledger."],
   ["perm-forum", "manage_forum", "Manage forum", "Create hosts, moderate posts and publish NPC threads."],
   ["perm-jobs", "manage_jobs", "Manage jobs", "Create, reveal, assign and settle contracts."],
-  ["perm-orders", "manage_orders", "Manage orders", "Approve, reject and route fictional orders."],
+  ["perm-orders", "manage_orders", "Manage orders", "Approve, reject and route restricted orders."],
   ["perm-messages", "send_npc_messages", "Send NPC messages", "Send clearly attributed and audited NPC messages."],
-  ["perm-announcements", "manage_announcements", "Manage announcements", "Publish targeted campaign announcements."],
-  ["perm-audit", "view_audit", "View audit", "Read immutable campaign-control history."],
-  ["perm-settings", "manage_settings", "Manage settings", "Change campaign time and host configuration."],
+  ["perm-announcements", "manage_announcements", "Manage announcements", "Publish targeted host announcements."],
+  ["perm-audit", "view_audit", "View audit", "Read immutable host-control history."],
+  ["perm-settings", "manage_settings", "Manage settings", "Change host time and configuration."],
 ] as const;
 
 const factionRows = [
@@ -83,36 +83,36 @@ const categoryNames = [
 
 type ProductSeed = [string, string, string, string, string, string, string, number, number, string, string, number, number, string | null, number];
 const productRows: ProductSeed[] = [
-  ["prod-ghostline", "CC-GLT-044", "Ghostline Signal Tap", "PROGRAMS", "vendor-chrome", "A palm-sized relay shim for a fictional Matrix run.", "Its scarred ceramic shell carries three owner marks. Vela guarantees the firmware was rewritten locally; she does not guarantee what listens back.", 7400, 3, "EXPERIMENTAL", "FORBIDDEN", 4, 2, null, 0],
-  ["prod-aresdown", "CC-AR-119", "Aresdown Folding Carbine", "WEAPONS", "vendor-chrome", "Compact runner carbine with a rebuilt smart interface.", "A fictional campaign weapon assembled from mismatched corporate lots and tuned by an independent gunsmith.", 12800, 2, "MILITARY", "RESTRICTED", 7, 3, null, 1],
+  ["prod-ghostline", "CC-GLT-044", "Ghostline Signal Tap", "PROGRAMS", "vendor-chrome", "A palm-sized relay shim for a covert Matrix run.", "Its scarred ceramic shell carries three owner marks. Vela guarantees the firmware was rewritten locally; she does not guarantee what listens back.", 7400, 3, "EXPERIMENTAL", "FORBIDDEN", 4, 2, null, 0],
+  ["prod-aresdown", "CC-AR-119", "Aresdown Folding Carbine", "WEAPONS", "vendor-chrome", "Compact runner carbine with a rebuilt smart interface.", "A compact weapon assembled from mismatched corporate lots and tuned by an independent gunsmith.", 12800, 2, "MILITARY", "RESTRICTED", 7, 3, null, 1],
   ["prod-rainshell", "CC-RS-008", "Rain-Shell Lined Coat", "ARMOR", "vendor-chrome", "Street armor disguised as a weather-beaten commuter coat.", "Flexible ceramic inserts and a hidden comms pocket. The old transit patch is intentionally left in place.", 3100, 8, "UNCOMMON", "LICENSE REQUIRED", 0, 1, null, 0],
-  ["prod-caseless", "CC-CM-220", "Caseless Match Load", "AMMUNITION", "vendor-chrome", "Sealed packet of precision fictional ammunition.", "Lot numbers have been acid-etched away. Sold in campaign-scale bundles rather than real-world specifications.", 480, 24, "SCARCE", "RESTRICTED", 2, 1, null, 0],
-  ["prod-scrubber", "CC-SCR-52", "Trace Scrubber Suite", "PROGRAMS", "vendor-chrome", "Defensive deck utility that burns its route history.", "A fictional Matrix program with loud diagnostics and a habit of naming every process after extinct birds.", 5900, 5, "RARE", "CORPORATE CONTROLLED", 5, 2, "faction-free-nodes", 0],
+  ["prod-caseless", "CC-CM-220", "Caseless Match Load", "AMMUNITION", "vendor-chrome", "Sealed packet of precision caseless ammunition.", "Lot numbers have been acid-etched away. Sold in sealed twenty-round bundles.", 480, 24, "SCARCE", "RESTRICTED", 2, 1, null, 0],
+  ["prod-scrubber", "CC-SCR-52", "Trace Scrubber Suite", "PROGRAMS", "vendor-chrome", "Defensive deck utility that burns its route history.", "A Matrix program with loud diagnostics and a habit of naming every process after extinct birds.", 5900, 5, "RARE", "CORPORATE CONTROLLED", 5, 2, "faction-free-nodes", 0],
   ["prod-microdrone", "CC-MD-12", "Needle-Eye Scout Drone", "DRONES", "vendor-chrome", "Quiet inspection drone for ducts and dead zones.", "Rebuilt rotors, low-light optics and a deliberately limited onboard personality.", 8800, 4, "RARE", "LICENSE REQUIRED", 3, 2, null, 0],
-  ["prod-jammer", "WL-BLK-09", "Blackout Field Jammer", "ELECTRONICS", "vendor-wraith", "Briefcase relay that turns a room into signal weather.", "Wraith ships it in a municipal survey case. Use is purely a fictional campaign action.", 9600, 2, "MILITARY", "FORBIDDEN", 6, 3, null, 1],
-  ["prod-clean-sin", "WL-SIN-31", "Thirty-Day Mirror SIN", "IDENTITIES", "vendor-wraith", "Time-limited fictional identity package with shallow history.", "Includes a coherent employment trail, rent records and exactly one embarrassing hobby subscription.", 14500, 3, "RARE", "FORBIDDEN", 8, 3, null, 1],
+  ["prod-jammer", "WL-BLK-09", "Blackout Field Jammer", "ELECTRONICS", "vendor-wraith", "Briefcase relay that turns a room into signal weather.", "Wraith ships it in a municipal survey case with its serial mesh scrubbed.", 9600, 2, "MILITARY", "FORBIDDEN", 6, 3, null, 1],
+  ["prod-clean-sin", "WL-SIN-31", "Thirty-Day Mirror SIN", "IDENTITIES", "vendor-wraith", "Time-limited identity package with a shallow registry history.", "Includes a coherent employment trail, rent records and exactly one embarrassing hobby subscription.", 14500, 3, "RARE", "FORBIDDEN", 8, 3, null, 1],
   ["prod-deaddrop", "WL-DD-7", "Cross-Grid Dead Drop", "SERVICES", "vendor-wraith", "One sealed delivery across two controlled districts.", "Wraith chooses the route and the clock. Buyers receive a phrase, a locker glyph and no refund for lateness.", 2600, 99, "UNCOMMON", "UNKNOWN", 1, 1, null, 0],
   ["prod-citymap", "WL-MAP-2", "Municipal Tunnel Delta", "INFORMATION", "vendor-wraith", "Recent changes to utility tunnels beneath south Seattle.", "Annotated with flooded sections, spirit sightings and corporate inspection schedules.", 1800, 7, "SCARCE", "CORPORATE CONTROLLED", 2, 1, null, 0],
   ["prod-foldbike", "WL-FB-66", "Courier Foldbike", "VEHICLES", "vendor-wraith", "Compact electric bike with replaceable identity plates.", "Quiet enough for service corridors and ugly enough to be ignored at a loading dock.", 11200, 2, "RARE", "LICENSE REQUIRED", 4, 2, null, 0],
   ["prod-sealedcrate", "WL-SC-0", "Sealed Corporate Crate", "CONTRABAND", "vendor-wraith", "Unmanifested crate. Contents disclosed after approval.", "The only exterior mark is a violet quarantine stripe that does not belong to any known port authority.", 23000, 1, "UNIQUE", "UNKNOWN", 10, 4, "faction-hollow", 1],
-  ["prod-reflex", "MS-RX-3", "Synaptic Reflex Tune", "BIOWARE", "vendor-morrow", "Clinic appointment for calibrated response enhancement.", "Includes screening, implantation and two follow-ups in a fictional tabletop context.", 18000, 2, "RARE", "RESTRICTED", 6, 3, null, 1],
+  ["prod-reflex", "MS-RX-3", "Synaptic Reflex Tune", "BIOWARE", "vendor-morrow", "Clinic appointment for calibrated response enhancement.", "Includes screening, implantation and two follow-up appointments.", 18000, 2, "RARE", "RESTRICTED", 6, 3, null, 1],
   ["prod-ocular", "MS-OC-11", "Low-Light Ocular Suite", "CYBERWARE", "vendor-morrow", "Rugged low-light optics with a clean diagnostic history.", "Morrow stripped the corporate telemetry and retained the useful self-test routines.", 9200, 4, "SCARCE", "LICENSE REQUIRED", 3, 2, null, 1],
-  ["prod-trauma", "MS-TK-4", "Street Trauma Kit", "MEDICAL", "vendor-morrow", "Sealed field kit marked for trained campaign characters.", "Color-coded supplies, a blunt printed checklist and a slot for the owner's emergency contact.", 1250, 12, "COMMON", "LEGAL", 0, 0, null, 0],
+  ["prod-trauma", "MS-TK-4", "Street Trauma Kit", "MEDICAL", "vendor-morrow", "Sealed field kit marked for trained emergency personnel.", "Color-coded supplies, a blunt printed checklist and a slot for the owner's emergency contact.", 1250, 12, "COMMON", "LEGAL", 0, 0, null, 0],
   ["prod-dermal", "MS-DP-8", "Dermal Patch Set", "CYBERWARE", "vendor-morrow", "Subtle protective implant package.", "Designed for clients who need protection without advertising a chrome budget.", 13700, 2, "RARE", "RESTRICTED", 7, 3, null, 1],
   ["prod-cleanup", "MS-CL-1", "No-Questions Cleanup", "SERVICES", "vendor-morrow", "After-action clinic slot and forensic scrub.", "The service covers treatment, clothing disposal and a believable waiting-room timestamp.", 4200, 6, "SCARCE", "UNKNOWN", 2, 1, null, 0],
   ["prod-autodoc", "MS-AD-9", "Portable Auto-Doc Cradle", "MEDICAL", "vendor-morrow", "Bulky diagnostic cradle for a runner safehouse.", "Its voice interface is disabled; Morrow says this is a feature, not missing hardware.", 22600, 1, "MILITARY", "CORPORATE CONTROLLED", 9, 4, null, 1],
   ["prod-emberfocus", "AM-EF-3", "Ember-Thread Focus", "FOCI", "vendor-ashen", "Hand-knotted focus carrying a patient heat signature.", "Ash Sister records three verified custodians and one spirit that declined to identify itself.", 8900, 2, "RARE", "RESTRICTED", 5, 2, "faction-talismongers", 1],
   ["prod-rainreagents", "AM-RR-20", "Rain-Caught Reagents", "REAGENTS", "vendor-ashen", "Ritual reagents gathered during a severe electrical storm.", "Each packet is dated, warded and accompanied by a terse note about local conditions.", 1400, 14, "UNCOMMON", "LEGAL", 0, 1, null, 0],
   ["prod-spiritledger", "AM-SL-1", "Displaced Spirit Ledger", "INFORMATION", "vendor-ashen", "Private index of recent astral displacement events.", "A hand-built concordance tying construction sites, weather anomalies and witness accounts together.", 5200, 3, "UNIQUE", "UNKNOWN", 6, 3, "faction-talismongers", 0],
-  ["prod-wardchalk", "AM-WC-12", "Ochre Ward Chalk", "MAGICAL GOODS", "vendor-ashen", "Twelve sticks of prepared ritual chalk.", "Marked for tabletop ritual use; each stick has a different mineral texture and astral resonance.", 680, 20, "COMMON", "LEGAL", 0, 0, null, 0],
+  ["prod-wardchalk", "AM-WC-12", "Ochre Ward Chalk", "MAGICAL GOODS", "vendor-ashen", "Twelve sticks of prepared ritual chalk.", "Prepared for ritual warding; each stick has a different mineral texture and astral resonance.", 680, 20, "COMMON", "LEGAL", 0, 0, null, 0],
   ["prod-memorycharm", "AM-MC-8", "Mnemonic Bone Charm", "FOCI", "vendor-ashen", "A small charm associated with stable recall.", "The seller insists it was ethically sourced from a synthetic medical substrate.", 6100, 3, "SCARCE", "LICENSE REQUIRED", 4, 2, null, 1],
   ["prod-astralconsult", "AM-AC-5", "Astral Site Consultation", "SERVICES", "vendor-ashen", "Remote reading followed by one supervised visit.", "Ash Sister delivers a threat sketch, spirit etiquette notes and a list of questions nobody answered.", 3600, 8, "UNCOMMON", "LEGAL", 2, 1, null, 0],
   ["prod-whisperlink", "CC-WL-77", "Whisperlink Commlink", "COMMLINKS", "vendor-chrome", "Low-profile commlink rebuilt for quiet team traffic.", "No fashionable shell, no subscription hooks and no cheerful setup assistant.", 2700, 10, "UNCOMMON", "LEGAL", 0, 1, null, 0],
   ["prod-bishopdeck", "CC-BD-6", "Bishop-6 Cyberdeck", "CYBERDECKS", "vendor-chrome", "Older deck with excellent thermals and suspiciously new ports.", "The boot screen contains a hand-drawn bishop and a warning about borrowed credentials.", 31500, 1, "EXPERIMENTAL", "RESTRICTED", 10, 4, "faction-free-nodes", 1],
   ["prod-bugsweeper", "WL-BS-4", "Room Bug Sweeper", "ELECTRONICS", "vendor-wraith", "Broad-spectrum survey kit in a battered tool roll.", "Reports confidence as weather symbols because its last owner disliked percentages.", 3900, 6, "UNCOMMON", "LEGAL", 1, 1, null, 0],
-  ["prod-medgel", "MS-MG-40", "Coagulant Medgel", "MEDICAL", "vendor-morrow", "Compact emergency gel packets for campaign use.", "Stored in numbered sleeves with tactile labels for low-light retrieval.", 320, 30, "COMMON", "LEGAL", 0, 0, null, 0],
+  ["prod-medgel", "MS-MG-40", "Coagulant Medgel", "MEDICAL", "vendor-morrow", "Compact emergency coagulant gel packets.", "Stored in numbered sleeves with tactile labels for low-light retrieval.", 320, 30, "COMMON", "LEGAL", 0, 0, null, 0],
   ["prod-moonwater", "AM-MW-2", "Moonwell Condensate", "REAGENTS", "vendor-ashen", "Two sealed vials with faint violet interference.", "Collected from a rooftop shrine before demolition and verified against the Ashen Market ledger.", 2100, 5, "SCARCE", "RESTRICTED", 3, 2, null, 0],
-  ["prod-routekey", "WL-RK-13", "Freight Route Cipher", "INFORMATION", "vendor-wraith", "A week of fictional freight-routing credentials.", "Useful only inside the campaign's Seattle grid and invalidated after first confirmed exposure.", 7600, 2, "RARE", "CORPORATE CONTROLLED", 6, 3, null, 1],
+  ["prod-routekey", "WL-RK-13", "Freight Route Cipher", "INFORMATION", "vendor-wraith", "A week of authenticated freight-routing credentials.", "Valid only inside the Seattle grid and invalidated after first confirmed exposure.", 7600, 2, "RARE", "CORPORATE CONTROLLED", 6, 3, null, 1],
 ];
 
 const hostRows = [
@@ -125,7 +125,7 @@ const hostRows = [
 ] as const;
 
 const threadRows = [
-  ["thread-1", "host-jackpoint", "user-gm", "SEATTLE GRID: maintenance window and false certificates", "SYSTEM", "GRID KEEPER", "Two relays will rotate keys at 03:00 campaign time. If your deck reports certificate FROST-18, disconnect and message LATCHKEY."],
+  ["thread-1", "host-jackpoint", "user-gm", "SEATTLE GRID: maintenance window and false certificates", "SYSTEM", "GRID KEEPER", "Two relays will rotate keys at 03:00 local host time. If your deck reports certificate FROST-18, disconnect and message LATCHKEY."],
   ["thread-2", "host-redmond", "user-null", "The rain near Touristville is whispering names", "PLAYER_ALIAS", null, "Not poetry. Three witnesses heard the same two names in runoff under the old monorail. Looking for astral eyes before someone follows the sound."],
   ["thread-3", "host-fixer", "user-gm", "Quiet retrieval / Tacoma / no corporate marks", "NPC_IDENTITY", "VELA", "Need four careful people for a container that officially arrived empty. No fireworks. Good money for clean hands."],
   ["thread-4", "host-matrix", "user-hex", "New IC signature: paper wasp swarm", "PLAYER_ALIAS", null, "Saw a host split one trace process into hundreds of tiny agents. They fold into certificate chains when challenged. Bring area denial."],
@@ -214,9 +214,33 @@ async function applySeedSecurityV3(db: D1Database, bootstrapPassword: string): P
   await db.batch(statements);
 }
 
+async function applyImmersiveCopyV4(db: D1Database): Promise<void> {
+  const statements = [
+    db.prepare("UPDATE products SET short_description=? WHERE id=?").bind("A palm-sized relay shim for a covert Matrix run.", "prod-ghostline"),
+    db.prepare("UPDATE products SET full_description=? WHERE id=?").bind("A compact weapon assembled from mismatched corporate lots and tuned by an independent gunsmith.", "prod-aresdown"),
+    db.prepare("UPDATE products SET short_description=?, full_description=? WHERE id=?").bind("Sealed packet of precision caseless ammunition.", "Lot numbers have been acid-etched away. Sold in sealed twenty-round bundles.", "prod-caseless"),
+    db.prepare("UPDATE products SET full_description=? WHERE id=?").bind("A Matrix program with loud diagnostics and a habit of naming every process after extinct birds.", "prod-scrubber"),
+    db.prepare("UPDATE products SET full_description=? WHERE id=?").bind("Wraith ships it in a municipal survey case with its serial mesh scrubbed.", "prod-jammer"),
+    db.prepare("UPDATE products SET short_description=? WHERE id=?").bind("Time-limited identity package with a shallow registry history.", "prod-clean-sin"),
+    db.prepare("UPDATE products SET full_description=? WHERE id=?").bind("Includes screening, implantation and two follow-up appointments.", "prod-reflex"),
+    db.prepare("UPDATE products SET short_description=? WHERE id=?").bind("Sealed field kit marked for trained emergency personnel.", "prod-trauma"),
+    db.prepare("UPDATE products SET full_description=? WHERE id=?").bind("Prepared for ritual warding; each stick has a different mineral texture and astral resonance.", "prod-wardchalk"),
+    db.prepare("UPDATE products SET short_description=? WHERE id=?").bind("Compact emergency coagulant gel packets.", "prod-medgel"),
+    db.prepare("UPDATE products SET short_description=?, full_description=? WHERE id=?").bind("A week of authenticated freight-routing credentials.", "Valid only inside the Seattle grid and invalidated after first confirmed exposure.", "prod-routekey"),
+    db.prepare("UPDATE inventory_items SET description=(SELECT short_description FROM products WHERE products.id=inventory_items.product_id) WHERE product_id IS NOT NULL"),
+    db.prepare("UPDATE forum_threads SET content=? WHERE id=?").bind("Two relays will rotate keys at 03:00 local host time. If your deck reports certificate FROST-18, disconnect and message LATCHKEY.", "thread-1"),
+    db.prepare("UPDATE forum_posts SET content_markdown=? WHERE id=?").bind("Two relays will rotate keys at 03:00 local host time. If your deck reports certificate FROST-18, disconnect and message LATCHKEY.", "post-thread-1"),
+    db.prepare("UPDATE private_messages SET body_markdown=? WHERE id=?").bind("Your watched host changed certificate twice. Possible interception or hostile relay rotation.", "message-grid-1"),
+    db.prepare("UPDATE announcements SET title=?, body=?, source_label=? WHERE id=?").bind("Host clock synchronized", "Local host time is 04:17, 18 November 2080. Tacoma weather: hard rain.", "GRID KEEPER", "announcement-3"),
+    db.prepare("INSERT OR REPLACE INTO campaign_settings (id,key,value,value_type,updated_by) VALUES ('setting-seed','seed_version','4','INTEGER','user-gm')"),
+  ];
+  await db.batch(statements);
+}
+
 export async function seedCampaignIfEmpty(db: D1Database, bootstrapPassword?: string): Promise<void> {
   const seeded = await db.prepare("SELECT value FROM campaign_settings WHERE key = 'seed_version'").first<{ value: string }>();
-  if (seeded?.value === "3") return;
+  if (seeded?.value === "4") return;
+  if (seeded?.value === "3") { await applyImmersiveCopyV4(db); return; }
   if (!bootstrapPassword || bootstrapPassword.length < 12 || bootstrapPassword.length > 128) {
     await lockSeedAuthentication(db);
     return;
@@ -226,6 +250,7 @@ export async function seedCampaignIfEmpty(db: D1Database, bootstrapPassword?: st
   }
   if (seeded?.value === "1" || seeded?.value === "2") {
     await applySeedSecurityV3(db, bootstrapPassword);
+    await applyImmersiveCopyV4(db);
     return;
   }
 
@@ -294,12 +319,12 @@ export async function seedCampaignIfEmpty(db: D1Database, bootstrapPassword?: st
   prepared.push(db.prepare("INSERT OR IGNORE INTO private_messages (id,conversation_id,sender_user_id,source_identity,source_label,body_markdown) VALUES (?,?,?,?,?,?)").bind("message-vela-1", "conversation-vela", "user-gm", "FIXER", "VELA", "The container is real. The manifest is not. Confirm only if your team can keep both facts separate."));
   prepared.push(db.prepare("INSERT OR IGNORE INTO private_conversations (id,subject,created_by) VALUES (?,?,?)").bind("conversation-grid", "Host integrity bulletin", "user-gm"));
   prepared.push(db.prepare("INSERT OR IGNORE INTO conversation_participants (conversation_id,user_id,unread_count) VALUES (?,?,?)").bind("conversation-grid", "user-hex", 1));
-  prepared.push(db.prepare("INSERT OR IGNORE INTO private_messages (id,conversation_id,sender_user_id,source_identity,source_label,body_markdown) VALUES (?,?,?,?,?,?)").bind("message-grid-1", "conversation-grid", "user-gm", "SYSTEM", "GRID KEEPER", "Your watched host changed certificate twice. This notification is fictional campaign telemetry."));
+  prepared.push(db.prepare("INSERT OR IGNORE INTO private_messages (id,conversation_id,sender_user_id,source_identity,source_label,body_markdown) VALUES (?,?,?,?,?,?)").bind("message-grid-1", "conversation-grid", "user-gm", "SYSTEM", "GRID KEEPER", "Your watched host changed certificate twice. Possible interception or hostile relay rotation."));
 
   const announcements = [
     ["announcement-1", "CORRUPTED CERTIFICATE DETECTED", "Do not accept route certificate FROST-18. LATCHKEY is rotating local keys.", "HOSTILE IC", "GRID KEEPER", 0, 1],
     ["announcement-2", "Astral pressure rising", "Rain City Talismongers report unstable wards along the eastern transit corridor.", "ASTRAL ANOMALY", "ASH_SISTER", 2, 0],
-    ["announcement-3", "Campaign clock advanced", "Local campaign time is 04:17, 18 November 2080. Tacoma weather: hard rain.", "NOTICE", "GAME MASTER", 0, 1],
+    ["announcement-3", "Host clock synchronized", "Local host time is 04:17, 18 November 2080. Tacoma weather: hard rain.", "NOTICE", "GAME MASTER", 0, 1],
   ];
   for (const row of announcements) prepared.push(db.prepare("INSERT OR IGNORE INTO announcements (id,title,body,severity,source_label,min_clearance_rank,pinned,created_by) VALUES (?,?,?,?,?,?,?,?)").bind(...row, "user-gm"));
 
@@ -321,4 +346,5 @@ export async function seedCampaignIfEmpty(db: D1Database, bootstrapPassword?: st
   await runBatches(db, prepared);
   await applySeedAccountingV2(db);
   await applySeedSecurityV3(db, bootstrapPassword);
+  await applyImmersiveCopyV4(db);
 }

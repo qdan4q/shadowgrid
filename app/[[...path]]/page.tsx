@@ -31,8 +31,8 @@ export default async function ShadowGridRoute({ params }: { params: Promise<{ pa
   if (publicPages.has(route)) {
     if (route === "login") return <LoginScreen />;
     if (route === "access-denied") return <PublicNotice code="ДОСТУП ЗАПРЕЩЁН" title="Уровень допуска не соответствует этому узлу" body="Хост не раскрыл метаданные. Вернитесь на разрешённый маршрут или свяжитесь с Мастером игры." />;
-    if (route === "account-restricted") return <PublicNotice code="АККАУНТ ОГРАНИЧЕН" title="Привилегии раннера ограничены" body="Администрация кампании ограничила одну или несколько возможностей аккаунта. Ограничения настраиваются отдельно и могут не запрещать вход." />;
-    return <PublicNotice code="ОБСЛУЖИВАНИЕ ХОСТА" title="Локальный ретранслятор временно изолирован" body="Данные кампании сохранены. Мастер игры восстановит маршрут, когда хост будет готов." />;
+    if (route === "account-restricted") return <PublicNotice code="АККАУНТ ОГРАНИЧЕН" title="Привилегии раннера ограничены" body="Администрация хоста ограничила одну или несколько возможностей аккаунта. Статус допуска не обязательно запрещает вход." />;
+    return <PublicNotice code="ОБСЛУЖИВАНИЕ ХОСТА" title="Локальный ретранслятор временно изолирован" body="Данные узла сохранены. Администратор восстановит маршрут после завершения диагностики." />;
   }
   const requestHeaders = await headers();
   const viewer = await getViewerFromCookieHeader(requestHeaders.get("cookie"));
