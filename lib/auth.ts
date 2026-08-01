@@ -145,7 +145,8 @@ export function readSessionToken(cookieHeader: string | null): string | null {
 export async function getViewerFromCookieHeader(cookieHeader: string | null): Promise<ViewerContext | null> {
   await ensureCampaignReady();
   const security = await getD1().prepare("SELECT value FROM campaign_settings WHERE key='seed_version'").first<{ value: string }>();
-  if (security?.value !== "3") return null;
+  const seedVersion = Number(security?.value);
+  if (!Number.isInteger(seedVersion) || seedVersion < 3) return null;
   const token = readSessionToken(cookieHeader);
   if (!token) return null;
   const tokenHash = await hashToken(token);
@@ -175,7 +176,8 @@ export async function authenticate(loginName: string, password: string, clientAd
 > {
   await ensureCampaignReady();
   const security = await getD1().prepare("SELECT value FROM campaign_settings WHERE key='seed_version'").first<{ value: string }>();
-  if (security?.value !== "3") {
+  const seedVersion = Number(security?.value);
+  if (!Number.isInteger(seedVersion) || seedVersion < 3) {
     return { ok: false, status: 503, message: "Начальная настройка владельца заблокирована. Настройте SHADOWGRID_BOOTSTRAP_PASSWORD и перезапустите хост." };
   }
   const normalized = loginName.trim().toLowerCase();

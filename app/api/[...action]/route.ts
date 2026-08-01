@@ -71,7 +71,7 @@ export async function GET(request: Request) {
       (SELECT COUNT(*) FROM products) AS products,
       (SELECT COUNT(*) FROM audit_logs) AS audits,
       (SELECT value FROM campaign_settings WHERE key='seed_version') AS seed_version,
-      CASE WHEN (SELECT value FROM campaign_settings WHERE key='seed_version')='3' THEN 1 ELSE 0 END AS security_ready,
+      CASE WHEN CAST((SELECT value FROM campaign_settings WHERE key='seed_version') AS INTEGER) >= 3 THEN 1 ELSE 0 END AS security_ready,
       CASE WHEN EXISTS (SELECT 1 FROM orders WHERE id='order-seed-pending' AND status='AWAITING GM')
         THEN EXISTS (
           SELECT 1 FROM transactions ledger_entry JOIN orders purchase_order ON purchase_order.id=ledger_entry.related_order_id

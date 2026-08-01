@@ -65,7 +65,7 @@ test("fails closed around owner bootstrap and cookie-authenticated mutations", a
   assert.match(seed, /user\.id === "user-gm" \? 1 : 0/);
   assert.match(seed, /crypto\.randomUUID\(\).*crypto\.randomUUID\(\)/s);
   assert.doesNotMatch(seed, /BlackIce!|GridGhost!/);
-  assert.match(auth, /security\?\.value !== "3"/);
+  assert.match(auth, /seedVersion < 3/);
   assert.match(auth, /failed_login_count=failed_login_count\+1/);
   assert.match(route, /validateMutationRequest/);
   assert.match(route, /application\/json/);
