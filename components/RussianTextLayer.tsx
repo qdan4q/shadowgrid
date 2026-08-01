@@ -232,7 +232,11 @@ const tokens = new Map<string, string>([
   ["IDENTITIES", "ЛИЧНОСТИ"], ["SERVICES", "УСЛУГИ"], ["INFORMATION", "ИНФОРМАЦИЯ"], ["CONTRABAND", "КОНТРАБАНДА"],
   ["STREET SAMURAI", "УЛИЧНЫЙ САМУРАЙ"], ["DECKER", "ДЕКЕР"], ["RIGGER", "РИГГЕР"], ["MAGE", "МАГ"], ["SHAMAN", "ШАМАН"],
   ["TECHNOMANCER", "ТЕХНОМАНТ"], ["FACE", "ФЕЙС"], ["ADEPT", "АДЕПТ"], ["INFILTRATOR", "ИНФИЛЬТРАТОР"], ["MERCENARY", "НАЁМНИК"],
+  ["LANGUAGE", "ЯЗЫК"],
 ]);
+
+const reverseExact = new Map(Array.from(exact, ([english, russian]) => [russian, english]));
+const reverseTokens = new Map(Array.from(tokens, ([english, russian]) => [russian, english]));
 
 function translate(value: string): string {
   const trimmed = value.trim();
@@ -254,20 +258,26 @@ function translate(value: string): string {
   return translated;
 }
 
-function translateElement(root: unknown): void {
+function translateToEnglish(value: string): string {
+  const trimmed = value.trim();
+  const direct = reverseExact.get(trimmed) ?? reverseTokens.get(trimmed);
+  return direct ? value.replace(trimmed, direct) : value;
+}
+
+function translateElement(root: unknown, translator: (value: string) => string): void {
   const localRoot = root as Node & { querySelectorAll: (selectors: string) => NodeListOf<HTMLElement> };
   const walker = document.createTreeWalker(localRoot, NodeFilter.SHOW_TEXT);
   const nodes: Text[] = [];
   while (walker.nextNode()) nodes.push(walker.currentNode as Text);
   for (const node of nodes) {
     if (node.parentElement?.closest("script,style,pre,code")) continue;
-    const next = translate(node.nodeValue ?? "");
+    const next = translator(node.nodeValue ?? "");
     if (next !== node.nodeValue) node.nodeValue = next;
   }
   for (const element of Array.from(localRoot.querySelectorAll("[placeholder],[title],[aria-label]"))) {
     for (const attribute of ["placeholder", "title", "aria-label"]) {
       const value = element.getAttribute(attribute);
-      if (value) element.setAttribute(attribute, translate(value));
+      if (value) element.setAttribute(attribute, translator(value));
     }
   }
 }
@@ -275,22 +285,19 @@ function translateElement(root: unknown): void {
 export function RussianTextLayer() {
   useLayoutEffect(() => {
     const language = window.localStorage.getItem("shadowgrid.language") === "en" ? "en" : "ru";
+    const translator = language === "en" ? translateToEnglish : translate;
     document.documentElement.lang = language;
     document.documentElement.dataset.language = language;
-    if (language === "en") {
-      document.documentElement.dataset.languageReady = "true";
-      return;
-    }
-    translateElement(document.body);
+    translateElement(document.body, translator);
     document.documentElement.dataset.languageReady = "true";
     const observer = new MutationObserver((records) => {
       for (const record of records) {
         if (record.type === "characterData" && record.target.nodeType === Node.TEXT_NODE) {
           const node = record.target as Text;
-          const next = translate(node.nodeValue ?? "");
+          const next = translator(node.nodeValue ?? "");
           if (next !== node.nodeValue) node.nodeValue = next;
         }
-        for (const added of Array.from(record.addedNodes)) if (added.nodeType === Node.ELEMENT_NODE) translateElement(added as Element);
+        for (const added of Array.from(record.addedNodes)) if (added.nodeType === Node.ELEMENT_NODE) translateElement(added as Element, translator);
       }
     });
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
