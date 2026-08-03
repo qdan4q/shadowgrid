@@ -88,8 +88,7 @@ export async function POST(request: Request) {
     const body = await bodyFromRequest(request);
     if (action === "login") {
       const input = body as Record<string, unknown>;
-      const clientAddress = request.headers.get("cf-connecting-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
-      const result = await authenticate(String(input.loginName ?? ""), String(input.password ?? ""), clientAddress);
+      const result = await authenticate(String(input.loginName ?? ""), String(input.password ?? ""));
       if (!result.ok) return json({ ok: false, error: result.message }, result.status);
       const response = json({ ok: true, redirect: result.user.forcePasswordChange ? "/settings?password-change=required" : result.user.roles.includes("GAME_MASTER") ? "/gm" : "/dashboard" });
       response.headers.set("Set-Cookie", sessionCookie(result.token, request.url));
