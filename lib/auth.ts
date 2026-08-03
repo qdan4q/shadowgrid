@@ -4,33 +4,7 @@ import type { AccessUser } from "./permissions";
 
 export const SESSION_COOKIE = "shadowgrid_session";
 const SESSION_HOURS = 12;
-const transientLoginThrottle = new Map<string, { failures: number; lockedUntil: number }>();
 let dummyCredential: Promise<{ hash: string; salt: string; iterations: number }> | undefined;
-
-function throttleKey(loginName: string, clientAddress: string): string {
-  return `${clientAddress.slice(0, 96)}|${loginName}`;
-}
-
-function isTransientlyLocked(key: string): boolean {
-  const entry = transientLoginThrottle.get(key);
-  if (!entry) return false;
-  if (entry.lockedUntil > Date.now()) return true;
-  if (entry.lockedUntil) transientLoginThrottle.delete(key);
-  return false;
-}
-
-function recordTransientFailure(key: string): void {
-  const previous = transientLoginThrottle.get(key);
-  const failures = (previous?.failures ?? 0) + 1;
-  transientLoginThrottle.set(key, { failures, lockedUntil: failures >= 5 ? Date.now() + 15 * 60_000 : 0 });
-  if (transientLoginThrottle.size > 2_000) {
-    const now = Date.now();
-    for (const [candidate, value] of transientLoginThrottle) {
-      if (!value.lockedUntil || value.lockedUntil <= now) transientLoginThrottle.delete(candidate);
-      if (transientLoginThrottle.size <= 1_500) break;
-    }
-  }
-}
 
 async function runDummyPasswordCheck(password: string): Promise<void> {
   dummyCredential ??= hashPassword("SHADOWGRID DUMMY CREDENTIAL - NO ACCOUNT");
@@ -170,7 +144,7 @@ export async function getViewerFromCookieHeader(cookieHeader: string | null): Pr
   return { sessionId: session.id, actor, effectiveUser, isPreview: effectiveUser.id !== actor.id };
 }
 
-export async function authenticate(loginName: string, password: string, clientAddress = "unknown"): Promise<
+export async function authenticate(loginName: string, password: string): Promise<
   | { ok: true; token: string; user: CampaignUser }
   | { ok: false; status: number; message: string }
 > {
@@ -181,11 +155,9 @@ export async function authenticate(loginName: string, password: string, clientAd
     return { ok: false, status: 503, message: "Начальная настройка владельца заблокирована. Настройте SHADOWGRID_BOOTSTRAP_PASSWORD и перезапустите хост." };
   }
   const normalized = loginName.trim().toLowerCase();
-  const transientKey = throttleKey(normalized, clientAddress);
-  if (isTransientlyLocked(transientKey)) return { ok: false, status: 429, message: "Слишком много неудачных рукопожатий. Повторите попытку после окончания блокировки." };
   const db = getD1();
   const row = await db.prepare(`SELECT id,password_hash,password_salt,password_iterations,enabled,
-      temporary_password_expires_at,failed_login_count,locked_until
+      temporary_password_expires_at
     FROM users WHERE LOWER(login_name) = ? AND deleted_at IS NULL`).bind(normalized).first<{
     id: string;
     password_hash: string;
@@ -193,34 +165,18 @@ export async function authenticate(loginName: string, password: string, clientAd
     password_iterations: number;
     enabled: number;
     temporary_password_expires_at: string | null;
-    failed_login_count: number;
-    locked_until: string | null;
   }>();
   const generic = { ok: false as const, status: 401, message: "Назначенный псевдоним или код доступа отклонён." };
   if (!row) {
     await runDummyPasswordCheck(password);
-    recordTransientFailure(transientKey);
     return generic;
   }
   if (!row.enabled) return { ok: false, status: 403, message: "Этот аккаунт отключён. Свяжитесь с Мастером игры." };
-  if (row.locked_until && new Date(row.locked_until).getTime() > Date.now()) {
-    return { ok: false, status: 429, message: "Слишком много неудачных рукопожатий. Повторите попытку после окончания блокировки." };
-  }
   if (row.temporary_password_expires_at && new Date(row.temporary_password_expires_at).getTime() <= Date.now()) {
     return { ok: false, status: 403, message: "Срок временного кода истёк. Попросите Мастера игры сбросить его." };
   }
   const valid = await verifyPassword(password, row.password_hash, row.password_salt, row.password_iterations);
-  if (!valid) {
-    await db.prepare(`UPDATE users SET
-        failed_login_count=failed_login_count+1,
-        locked_until=CASE WHEN failed_login_count+1>=5 THEN strftime('%Y-%m-%dT%H:%M:%fZ','now','+15 minutes') ELSE locked_until END,
-        updated_at=CURRENT_TIMESTAMP
-      WHERE id=?`).bind(row.id).run();
-    const failureState = await db.prepare("SELECT failed_login_count,locked_until FROM users WHERE id=?").bind(row.id).first<{ failed_login_count: number; locked_until: string | null }>();
-    recordTransientFailure(transientKey);
-    return (failureState?.failed_login_count ?? 0) >= 5 ? { ok: false, status: 429, message: "Рукопожатия заблокированы на пятнадцать минут." } : generic;
-  }
-  transientLoginThrottle.delete(transientKey);
+  if (!valid) return generic;
   await db.prepare("UPDATE users SET failed_login_count = 0, locked_until = NULL, last_login_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(row.id).run();
   const token = createSessionToken();
   const tokenHash = await hashToken(token);
