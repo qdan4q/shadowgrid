@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
   } catch {
     metadataBase = new URL("http://localhost:3000");
   }
-  const socialImage = new URL("/og-cathedral.png", metadataBase).toString();
+  const socialImage = new URL("/og-cathedral-v2.png", metadataBase).toString();
   return {
     metadataBase,
     title: { default: "ShadowGrid // Хост Дождливого города", template: "%s // ShadowGrid" },
@@ -32,7 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       siteName: "ShadowGrid",
       type: "website",
-      images: [{ url: socialImage, width: 1760, height: 900, alt: "Терминальный интерфейс частного теневого хоста ShadowGrid" }],
+      images: [{ url: socialImage, width: 1536, height: 1024, alt: "BLACK ICE CATHEDRAL — нелегальный цифровой собор ShadowGrid" }],
     },
     twitter: { card: "summary_large_image", title: "ShadowGrid // Хост Дождливого города", description, images: [socialImage] },
   };
