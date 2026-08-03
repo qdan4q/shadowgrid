@@ -30,7 +30,7 @@ export function LoginScreen() {
   }
 
   return (
-    <main className="login-gateway">
+    <main className="login-gateway cathedral-login">
       <div className="gateway-route" aria-hidden="true">
         <span>РЕТРАНСЛЯТОР//ПУБЛИЧНЫЙ</span><i /><span>СЕТКА-СИЭТЛА</span><i /><span className="route-cut">ОТКЛЮЧЁН</span>
       </div>
@@ -39,7 +39,7 @@ export function LoginScreen() {
           <div className="brand-mark" aria-hidden="true"><span>SG</span><b>⌁</b></div>
           <div>
             <p className="eyebrow">ЧАСТНЫЙ ТЕНЕВОЙ ХОСТ // ДОЖДЛИВЫЙ ГОРОД</p>
-            <h1 id="login-title">SHADOW<span>GRID</span></h1>
+            <h1 id="login-title">ENTER WITHOUT <span>A NAME.</span></h1>
             <p className="host-address">SG://SEA.00/ROOT-GATE · сборка 2080.11</p>
           </div>
         </header>

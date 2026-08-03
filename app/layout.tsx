@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
   } catch {
     metadataBase = new URL("http://localhost:3000");
   }
-  const socialImage = new URL("/og.png", metadataBase).toString();
+  const socialImage = new URL("/og-cathedral.png", metadataBase).toString();
   return {
     metadataBase,
     title: { default: "ShadowGrid // Хост Дождливого города", template: "%s // ShadowGrid" },
@@ -42,7 +42,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   colorScheme: "dark",
-  themeColor: "#0a0c0b",
+  themeColor: "#070506",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

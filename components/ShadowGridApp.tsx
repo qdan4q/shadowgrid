@@ -19,7 +19,7 @@ type Row = Record<string, unknown>;
 type ThemeKey = "seattle" | "corporate" | "green" | "amber" | "redmond" | "shamanic" | "blackice" | "lowband";
 type Effects = { scanlines: boolean; noise: boolean; flicker: boolean; grid: boolean; intensity: number; reducedMotion: boolean; sound: boolean; theme: ThemeKey };
 
-const defaultEffects: Effects = { scanlines: true, noise: false, flicker: false, grid: true, intensity: 0.35, reducedMotion: false, sound: false, theme: "seattle" };
+const defaultEffects: Effects = { scanlines: true, noise: true, flicker: false, grid: false, intensity: 0.45, reducedMotion: false, sound: false, theme: "blackice" };
 
 const playerNavigation: Array<[string, string, LucideIcon]> = [
   ["/dashboard", "ДОМАШНИЙ УЗЕЛ", Home], ["/feed", "ЛЕНТА СЕТКИ", Activity], ["/board", "ТЕНЕВАЯ ДОСКА", MessageSquareText],
@@ -142,10 +142,22 @@ function FeedRow({ thread }: { thread: Row }) {
   </article>;
 }
 
+function CathedralNaveBanner({ snapshot, viewer }: { snapshot: CampaignSnapshot; viewer: ViewerContext }) {
+  const sealedSignals = snapshot.threads.filter((thread) => flag(thread, "encrypted")).length;
+  return <section className="cathedral-nave-banner">
+    <aside aria-hidden="true"><span>I.</span><i /><small>NO NAME</small></aside>
+    <div className="nave-proclamation"><p>SHADOWGRID // NAVE 73A // PRIVATE CONGREGATION</p><h1>WELCOME,<br /><em>{viewer.effectiveUser.runnerAlias}.</em></h1><blockquote>Корпорации называют это вторжением. Мы называем это правом остаться невидимыми.</blockquote><a className="secondary-command" href="/feed"><Activity size={16} /> ВОЙТИ В ХОР СИГНАЛОВ</a></div>
+    <div className="nave-seal" aria-hidden="true"><i /><i /><i /><span>IX</span><b>73A</b></div>
+    <dl><div><dt>ЗАПЕЧАТАНО</dt><dd>{sealedSignals}</dd></div><div><dt>СВИДЕТЕЛЕЙ</dt><dd>0</dd></div><div><dt>ВРЕМЯ ХОСТА</dt><dd>{new Date(snapshot.campaignTime).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</dd></div></dl>
+    <aside aria-hidden="true"><span>II.</span><i /><small>NO SIN</small></aside>
+  </section>;
+}
+
 function Dashboard({ snapshot, viewer }: { snapshot: CampaignSnapshot; viewer: ViewerContext }) {
   const announcement = snapshot.announcements[0];
   const pending = snapshot.orders.filter((order) => ["AWAITING GM", "PENDING"].includes(text(order, "status"))).length;
   return <>
+    <CathedralNaveBanner snapshot={snapshot} viewer={viewer} />
     <PageIntro route="ДОМАШНИЙ УЗЕЛ" title={`Добрый вечер, ${viewer.effectiveUser.runnerAlias}.`} body="Маршрут достаточно стабилен. Хост отфильтровал данные по вашему допуску, репутации, фракции и ручным разрешениям." actions={<a className="secondary-command" href="/feed"><Activity size={16} /> ОТКРЫТЬ ЛЕНТУ СЕТКИ</a>} />
     {announcement ? <section className={`alert-strip severity-${text(announcement, "severity").toLowerCase().replaceAll(" ", "-")}`}><ShieldAlert size={20} /><div><p>{text(announcement, "severity")}{" // "}{text(announcement, "source_label")}</p><strong>{text(announcement, "title")}</strong><span>{text(announcement, "body")}</span></div><small>{timeAgo(announcement.created_at)}</small></section> : null}
     <div className="metric-grid"><Metric label="ДОСТУПНО НУЙЕН" value={nuyen(viewer.effectiveUser.nuyen)} note="баланс авторитетного реестра" icon={CircleDollarSign} /><Metric label="УЛИЧНАЯ РЕПУТАЦИЯ" value={String(viewer.effectiveUser.streetReputation)} note={`${viewer.effectiveUser.notoriety} дурной славы`} icon={Zap} tone="amber" /><Metric label="ДОПУСК МАТРИЦЫ" value={viewer.effectiveUser.clearanceKey} note={`ранг доступа ${viewer.effectiveUser.clearanceRank}`} icon={KeyRound} tone="cyan" /><Metric label="НЕПРОЧИТАНО / ОЖИДАЕТ" value={String(snapshot.conversations.reduce((total, item) => total + number(item, "unread_count"), 0) + pending)} note={`${pending} заказов на проверке`} icon={Inbox} tone="violet" /></div>
@@ -331,6 +343,20 @@ function GenericGmModule({ snapshot, module }: { snapshot: CampaignSnapshot; mod
   return <><PageIntro route={`GM/${module.toUpperCase()}`} title="Host configuration" body="This control surface uses server authorization and an immutable audit boundary." /><section className="data-panel"><EmptyState icon={Settings} title="CONFIGURATION NODE RESERVED" body="Configuration node reserved. Additional controls require root authorization." /></section></>;
 }
 
+function CathedralBootSequence() {
+  return <div className="cathedral-boot" role="status" aria-label="Подключение к Black Ice Cathedral">
+    <div className="boot-veil" aria-hidden="true"><i /><i /><i /><i /></div>
+    <section>
+      <p>SG://SEA.00/CATHEDRAL</p>
+      <div className="boot-seal" aria-hidden="true"><i /><i /><span>IX</span><b>73A</b></div>
+      <h1>BLACK ICE<br /><em>CATHEDRAL</em></h1>
+      <ol><li>ИМЯ УДАЛЕНО</li><li>SIN НЕ ОБНАРУЖЕН</li><li>СВИДЕТЕЛИ ОТСЕЧЕНЫ</li><li>ПРОХОД ОТКРЫТ</li></ol>
+      <div className="boot-progress"><i /></div>
+      <small>ENTER WITHOUT A NAME</small>
+    </section>
+  </div>;
+}
+
 function ContextPanel({ snapshot, viewer, onSettings }: { snapshot: CampaignSnapshot; viewer: ViewerContext; onSettings: () => void }) {
   return <aside className="context-panel"><section><p className="eyebrow">IDENTITY CERT</p><div className="identity-block"><div>{viewer.effectiveUser.runnerAlias.slice(0, 2)}</div><strong>{viewer.effectiveUser.runnerAlias}</strong><span>{viewer.effectiveUser.clearanceKey} CLEARANCE</span></div><dl className="terminal-list"><div><dt>FACTION</dt><dd>{viewer.effectiveUser.factionName ?? "UNALIGNED"}</dd></div><div><dt>REP / NOTORIETY</dt><dd>{viewer.effectiveUser.streetReputation} / {viewer.effectiveUser.notoriety}</dd></div><div><dt>NUYEN</dt><dd>{nuyen(viewer.effectiveUser.nuyen)}</dd></div></dl></section><section><p className="eyebrow">WATCHED ROUTES</p>{snapshot.hosts.slice(0, 3).map((host) => <a href={`/board/${text(host, "slug")}`} key={text(host, "id")}><span>{text(host, "icon")}</span><div><strong>{text(host, "name")}</strong><small>{number(host, "thread_count")} signals</small></div></a>)}</section><section><p className="eyebrow">PIRATE BAND // MUTED</p><div className="radio-line"><button title="Sound is off" onClick={onSettings}><Radio size={18} /></button><div><strong>KSM-2080</strong><span>NO AUDIO AUTOPLAY</span></div><i /></div></section></aside>;
 }
@@ -339,6 +365,7 @@ export function ShadowGridApp({ pathname, viewer, snapshot }: { pathname: string
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [commandsOpen, setCommandsOpen] = useState(false);
+  const [bootVisible, setBootVisible] = useState(true);
   const [effects, setEffectsState] = useState<Effects>(defaultEffects);
   const [language, setLanguageState] = useState<"ru" | "en">("ru");
   const selectedIndex = useRef(0);
@@ -352,6 +379,15 @@ export function ShadowGridApp({ pathname, viewer, snapshot }: { pathname: string
     if (stored) {
       try { setEffectsState({ ...defaultEffects, ...JSON.parse(stored), reducedMotion: motion || Boolean(JSON.parse(stored).reducedMotion) }); } catch { setEffectsState({ ...defaultEffects, reducedMotion: motion }); }
     } else setEffectsState({ ...defaultEffects, reducedMotion: motion });
+  }, []);
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const alreadyOpened = window.sessionStorage.getItem("shadowgrid.cathedral.opened") === "true";
+    if (reduceMotion || alreadyOpened) { setBootVisible(false); return; }
+    window.sessionStorage.setItem("shadowgrid.cathedral.opened", "true");
+    const timer = window.setTimeout(() => setBootVisible(false), 2850);
+    return () => window.clearTimeout(timer);
   }, []);
   function setEffects(next: Effects) { setEffectsState(next); window.localStorage.setItem("shadowgrid.effects", JSON.stringify(next)); }
   function setLanguage(next: "ru" | "en") { window.localStorage.setItem("shadowgrid.language", next); window.location.reload(); }
@@ -416,8 +452,10 @@ export function ShadowGridApp({ pathname, viewer, snapshot }: { pathname: string
   }, [effects, language, pathname, snapshot, viewer]);
 
   return <div className={`shadowgrid ${gmMode ? "gm-mode" : "player-mode"}`} data-theme={effects.theme} data-scanlines={effects.scanlines} data-noise={effects.noise} data-flicker={effects.flicker} data-grid={effects.grid} data-reduced-motion={effects.reducedMotion} style={{ "--effect-intensity": effects.intensity } as React.CSSProperties}>
+    {bootVisible ? <CathedralBootSequence /> : null}
     {viewer.isPreview ? <div className="preview-bar"><Eye size={16} /><strong>PREVIEW AS {viewer.effectiveUser.runnerAlias}</strong><span>READ-ONLY PLAYER CONTEXT · ACTIONS DISABLED</span><button onClick={exitPreview}>EXIT PREVIEW <X size={15} /></button></div> : null}
-    <header className="matrix-status"><button className="mobile-menu" onClick={() => setMenuOpen(true)} title="Open navigation"><Menu size={19} /></button><a href={gmMode ? "/gm" : "/dashboard"} className="mini-brand"><span>SG</span><div><strong>SHADOWGRID</strong><small>{gmMode ? "CONTROL HOST" : "RAIN CITY HOST"}</small></div></a><div className="status-route"><span className="live-dot" /><div><small>CURRENT HOST</small><strong>{gmMode ? "GM://ROOT-CONTROL" : "SG://SEA.00/LOCAL"}</strong></div></div><div className="status-chip"><small>ROUTE</small><strong>3 RELAYS</strong></div><div className="status-chip"><small>TRACE RISK</small><strong className="warning-text">LOW / 11%</strong></div><div className="status-spacer" /><div className="status-balance"><WalletCards size={15} /><div><small>AVAILABLE</small><strong>{nuyen(viewer.effectiveUser.nuyen)}</strong></div></div><div className="status-user"><div>{viewer.effectiveUser.runnerAlias.slice(0, 2)}</div><span><small>{viewer.effectiveUser.clearanceKey} CLEARANCE</small><strong>{viewer.effectiveUser.runnerAlias}</strong></span></div><button className="icon-button" onClick={() => setSettingsOpen(true)} title="Display settings"><SlidersHorizontal size={18} /></button></header>
+    <div className="cathedral-atmosphere" aria-hidden="true"><i /><i /><i /><span>LIBER UMBRARUM // NO TRUE NAMES</span><b>73A</b></div>
+    <header className="matrix-status"><button className="mobile-menu" onClick={() => setMenuOpen(true)} title="Open navigation"><Menu size={19} /></button><a href={gmMode ? "/gm" : "/dashboard"} className="mini-brand"><span>IX</span><div><strong>BLACK ICE CATHEDRAL</strong><small>{gmMode ? "CONTROL CHOIR" : "SHADOWGRID // 73A"}</small></div></a><div className="status-route"><span className="live-dot" /><div><small>CURRENT NAVE</small><strong>{gmMode ? "GM://ROOT-CRYPT" : "SG://SEA.00/CATHEDRAL"}</strong></div></div><div className="status-chip"><small>VEIL</small><strong>3 RELAYS</strong></div><div className="status-chip"><small>WITNESSES</small><strong className="warning-text">NONE / 11%</strong></div><div className="status-spacer" /><div className="status-balance"><WalletCards size={15} /><div><small>TITHE AVAILABLE</small><strong>{nuyen(viewer.effectiveUser.nuyen)}</strong></div></div><div className="status-user"><div>{viewer.effectiveUser.runnerAlias.slice(0, 2)}</div><span><small>{viewer.effectiveUser.clearanceKey} CLEARANCE</small><strong>{viewer.effectiveUser.runnerAlias}</strong></span></div><button className="icon-button" onClick={() => setSettingsOpen(true)} title="Display settings"><SlidersHorizontal size={18} /></button></header>
     <aside className={`node-nav ${menuOpen ? "open" : ""}`}><div className="nav-head"><div className="brand-mark"><span>SG</span><b>⌁</b></div><button className="nav-close" onClick={() => setMenuOpen(false)} title="Close navigation"><X size={18} /></button></div><p className="nav-section">{gmMode ? "HOST AUTHORITY" : "RUNNER NODES"}</p><nav>{navigation.map(([href, label, Icon]) => <a key={href} href={href} className={pathname === href || (href !== "/gm" && href !== "/dashboard" && pathname.startsWith(`${href}/`)) ? "active" : ""}><Icon size={17} aria-hidden="true" /><span>{label}</span>{label === "MESSAGES" && snapshot.conversations.some((item) => number(item, "unread_count") > 0) ? <b>{snapshot.conversations.reduce((sum, item) => sum + number(item, "unread_count"), 0)}</b> : null}</a>)}</nav>{viewer.actor.roles.includes("GAME_MASTER") && !viewer.isPreview ? <a className="mode-switch" href={gmMode ? "/dashboard" : "/gm"}>{gmMode ? <><Eye size={16} /> PLAYER SURFACE</> : <><ShieldAlert size={16} /> GM CONTROL HOST</>}</a> : null}<div className="nav-foot"><button onClick={() => setCommandsOpen(true)}><Command size={16} /><span>COMMANDS</span><kbd>⌘K</kbd></button><button onClick={logout}><LogOut size={16} /><span>DISCONNECT</span></button></div></aside>
     {menuOpen ? <button className="nav-scrim" aria-label="Close navigation" onClick={() => setMenuOpen(false)} /> : null}
     <main className="main-content">{content}</main>
