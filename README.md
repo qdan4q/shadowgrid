@@ -78,11 +78,10 @@ enter an owner-created temporary secret of 12–128 characters:
 SHADOWGRID_BOOTSTRAP_PASSWORD=<owner-created temporary secret>
 ```
 
-Do not commit, publish, or paste the real value into documentation. Then run in
-PowerShell:
+Do not commit, publish, or paste the real value into documentation. Open
+PowerShell in the cloned `shadowgrid` project directory, then run:
 
 ```powershell
-Set-Location -LiteralPath 'C:/Users/qqepta/Documents/Codex/shadowgrid'
 npm.cmd install
 npm.cmd run dev
 ```
