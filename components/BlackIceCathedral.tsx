@@ -4,17 +4,23 @@
 
 import {
   Archive, BriefcaseBusiness, ContactRound, Eye, Fingerprint,
-  LogOut, RadioTower, ShieldAlert, ShoppingBag,
-  Sparkles, Triangle, UserRound, Zap,
+  ExternalLink, LogOut, Music2, Pause, Play, RadioTower, ShieldAlert, ShoppingBag,
+  SkipBack, SkipForward, Sparkles, Triangle, UserRound, Volume2, VolumeX, X, Zap,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type WheelEvent } from "react";
 import type { ViewerContext } from "../lib/auth";
 import type { CampaignSnapshot } from "../lib/campaign";
 
 type Row = Record<string, unknown>;
 type RiteKey = "voices" | "contracts" | "contraband" | "reliquary" | "faces" | "identity";
 type Revelation = { overline: string; title: string; copy: string; meta: string; danger?: boolean };
+type YouTubePlayer = {
+  playVideo: () => void; pauseVideo: () => void; nextVideo: () => void; previousVideo: () => void;
+  setVolume: (volume: number) => void; mute: () => void; unMute: () => void; isMuted: () => boolean;
+  getVideoData: () => { title?: string }; destroy: () => void;
+};
+type YouTubeApi = { Player: new (element: HTMLElement, options: Record<string, unknown>) => YouTubePlayer; PlayerState: { PLAYING: number; PAUSED: number; ENDED: number } };
 
 const rites: Array<{ key: RiteKey; numeral: string; label: string; whisper: string; icon: LucideIcon }> = [
   { key: "voices", numeral: "I", label: "ГОЛОСА", whisper: "перехваченные передачи", icon: RadioTower },
@@ -121,15 +127,99 @@ function CathedralOpening({ onDone }: { onDone: () => void }) {
   </div>;
 }
 
+const KEYGEN_UPLOADS = "UUHgbw5cuDIas28eMvbI8Nqg";
+
+function CathedralChoir() {
+  const mountRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<YouTubePlayer | null>(null);
+  const [open, setOpen] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(28);
+  const [title, setTitle] = useState("KEYGEN CHURCH // CHANNEL TRANSMISSION");
+
+  useEffect(() => {
+    let cancelled = false;
+    const apiWindow = window as typeof window & { YT?: YouTubeApi; onYouTubeIframeAPIReady?: () => void };
+    const createPlayer = () => {
+      if (cancelled || !mountRef.current || !apiWindow.YT || playerRef.current) return;
+      const api = apiWindow.YT;
+      playerRef.current = new api.Player(mountRef.current, {
+        width: "320", height: "180",
+        playerVars: { listType: "playlist", list: KEYGEN_UPLOADS, controls: 0, playsinline: 1, rel: 0, modestbranding: 1 },
+        events: {
+          onReady: (event: { target: YouTubePlayer }) => { event.target.setVolume(28); setReady(true); },
+          onStateChange: (event: { data: number; target: YouTubePlayer }) => {
+            setPlaying(event.data === api.PlayerState.PLAYING);
+            const nextTitle = event.target.getVideoData().title;
+            if (nextTitle) setTitle(nextTitle);
+          },
+        },
+      });
+    };
+    if (apiWindow.YT?.Player) createPlayer();
+    else {
+      const previous = apiWindow.onYouTubeIframeAPIReady;
+      apiWindow.onYouTubeIframeAPIReady = () => { previous?.(); createPlayer(); };
+      if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+        const script = document.createElement("script");
+        script.src = "https://www.youtube.com/iframe_api";
+        script.async = true;
+        document.head.appendChild(script);
+      }
+    }
+    return () => { cancelled = true; playerRef.current?.destroy(); playerRef.current = null; };
+  }, []);
+
+  function togglePlayback() {
+    setOpen(true);
+    if (!playerRef.current || !ready) return;
+    if (playing) playerRef.current.pauseVideo(); else playerRef.current.playVideo();
+  }
+
+  function toggleMute() {
+    if (!playerRef.current) return;
+    if (playerRef.current.isMuted()) { playerRef.current.unMute(); setMuted(false); }
+    else { playerRef.current.mute(); setMuted(true); }
+  }
+
+  function changeVolume(next: number) {
+    setVolume(next);
+    playerRef.current?.setVolume(next);
+    if (next > 0 && muted) { playerRef.current?.unMute(); setMuted(false); }
+  }
+
+  return <aside className={`bic-choir ${open ? "is-open" : ""}`} aria-label="Музыкальный хор KEYGEN CHURCH">
+    <button type="button" className="bic-choir__tab" onClick={() => setOpen(!open)} aria-expanded={open}><Music2 /><span>РАЗБУДИТЬ ХОР</span><i className={playing ? "is-live" : ""} /></button>
+    <section>
+      <header><div><small>CHORUS://KEYGEN_CHURCH</small><b>{title}</b></div><button type="button" onClick={() => setOpen(false)} aria-label="Свернуть хор"><X /></button></header>
+      <div className="bic-choir__screen"><div ref={mountRef} /><i aria-hidden="true" /></div>
+      <div className="bic-choir__transport">
+        <button type="button" onClick={() => playerRef.current?.previousVideo()} disabled={!ready} aria-label="Предыдущая композиция"><SkipBack /></button>
+        <button type="button" className="bic-choir__play" onClick={togglePlayback} disabled={!ready} aria-label={playing ? "Пауза" : "Воспроизвести"}>{playing ? <Pause /> : <Play />}</button>
+        <button type="button" onClick={() => playerRef.current?.nextVideo()} disabled={!ready} aria-label="Следующая композиция"><SkipForward /></button>
+        <button type="button" onClick={toggleMute} disabled={!ready} aria-label={muted ? "Включить звук" : "Выключить звук"}>{muted ? <VolumeX /> : <Volume2 />}</button>
+        <input type="range" min="0" max="100" value={volume} onChange={(event) => changeVolume(Number(event.target.value))} aria-label="Громкость хора" />
+      </div>
+      <footer><span>{ready ? playing ? "● ХОР ЗВУЧИТ" : "ХОР ОЖИДАЕТ ЖЕСТА" : "СОГЛАСОВАНИЕ СИГНАЛА…"}</span><a href="https://www.youtube.com/channel/UCHgbw5cuDIas28eMvbI8Nqg" target="_blank" rel="noreferrer">ИСТОЧНИК <ExternalLink /></a></footer>
+    </section>
+  </aside>;
+}
+
 export function BlackIceCathedral({ pathname, viewer, snapshot }: { pathname: string; viewer: ViewerContext; snapshot: CampaignSnapshot }) {
   const [active, setActive] = useState<RiteKey>(() => initialRite(pathname));
   const [opening, setOpening] = useState(true);
   const [index, setIndex] = useState(0);
+  const [expanded, setExpanded] = useState<RiteKey | null>(null);
+  const [openedRecord, setOpenedRecord] = useState<number | null>(null);
+  const wheelLock = useRef(false);
   const revelations = useMemo(() => buildRevelations(snapshot, viewer), [snapshot, viewer]);
   const rite = rites.find((item) => item.key === active) ?? rites[0];
   const ActiveIcon = rite.icon;
   const activeItems = revelations[active];
   const chosen = activeItems[Math.min(index, activeItems.length - 1)] ?? fallbacks[active][0];
+  const opened = openedRecord === null ? null : activeItems[Math.min(openedRecord, activeItems.length - 1)];
   const unread = snapshot.conversations.reduce((sum, row) => sum + Number(row.unread_count ?? 0), 0);
 
   useEffect(() => {
@@ -141,15 +231,50 @@ export function BlackIceCathedral({ pathname, viewer, snapshot }: { pathname: st
     return () => window.clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      if (event.key === "Escape") {
+        if (openedRecord !== null) setOpenedRecord(null);
+        else if (expanded) setExpanded(null);
+        return;
+      }
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      setIndex((current) => (current + direction + activeItems.length) % activeItems.length);
+      if (openedRecord !== null) setOpenedRecord((current) => current === null ? null : (current + direction + activeItems.length) % activeItems.length);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activeItems.length, expanded, openedRecord]);
+
   function choose(next: RiteKey) {
-    setActive(next);
-    setIndex(0);
+    if (next === active) {
+      setExpanded((current) => current === next ? null : next);
+      setOpenedRecord(null);
+      return;
+    }
+    setActive(next); setIndex(0); setOpenedRecord(null);
   }
 
   function trackPointer(event: PointerEvent<HTMLDivElement>) {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    event.currentTarget.style.setProperty("--pointer-x", `${event.clientX - bounds.left}px`);
-    event.currentTarget.style.setProperty("--pointer-y", `${event.clientY - bounds.top}px`);
+    const eyeX = Math.max(-14, Math.min(14, ((event.clientX / window.innerWidth) - .5) * 28));
+    const eyeY = Math.max(-10, Math.min(10, ((event.clientY / window.innerHeight) - .5) * 20));
+    event.currentTarget.style.setProperty("--pointer-x", `${event.clientX}px`);
+    event.currentTarget.style.setProperty("--pointer-y", `${event.clientY}px`);
+    event.currentTarget.style.setProperty("--eye-x", `${eyeX}px`);
+    event.currentTarget.style.setProperty("--eye-y", `${eyeY}px`);
+  }
+
+  function cycleRecords(event: WheelEvent<HTMLElement>) {
+    if (Math.abs(event.deltaY) < 18 && Math.abs(event.deltaX) < 18 || wheelLock.current) return;
+    wheelLock.current = true;
+    const direction = event.deltaY + event.deltaX > 0 ? 1 : -1;
+    setIndex((current) => (current + direction + activeItems.length) % activeItems.length);
+    if (openedRecord !== null) setOpenedRecord((current) => current === null ? null : (current + direction + activeItems.length) % activeItems.length);
+    window.setTimeout(() => { wheelLock.current = false; }, 260);
   }
 
   async function logout() {
@@ -157,9 +282,10 @@ export function BlackIceCathedral({ pathname, viewer, snapshot }: { pathname: st
     window.location.assign("/login");
   }
 
-  return <div className="bic" onPointerMove={trackPointer} style={{ "--rite-index": rites.findIndex((item) => item.key === active) } as CSSProperties}>
+  return <div className={`bic ${expanded ? "is-sector-expanded" : ""}`} onPointerMove={trackPointer} style={{ "--rite-index": rites.findIndex((item) => item.key === active) } as CSSProperties}>
     {opening ? <CathedralOpening onDone={() => setOpening(false)} /> : null}
     <div className="bic-pointer" aria-hidden="true" />
+    <div className="bic-cursor" aria-hidden="true"><i /><span /></div>
     <div className="bic-noise" aria-hidden="true" />
     <div className="bic-data-rain" aria-hidden="true">
       <span>01001<br />NO SIN<br />†<br />73A<br />NULL</span><span>ᚨ<br />TRACE<br />000101<br />EYE</span><span>BLACK ICE<br />AWAKE<br />∴<br />00110</span><span>TRUST<br />NULL<br />†<br />SEA.00</span><span>00073<br />MOTH<br />HOST<br />∴</span><span>RITUAL<br />04:17<br />0101<br />VOID</span>
@@ -180,8 +306,8 @@ export function BlackIceCathedral({ pathname, viewer, snapshot }: { pathname: st
         <small>АРХИВ МЁРТВЫХ КЛЮЧЕЙ<br />73A / 41 / NULL</small>
       </aside>
 
-      <section className="bic-sanctum" aria-live="polite">
-        <header className="bic-sanctum__heading">
+      <section className="bic-sanctum" aria-live="polite" onWheel={cycleRecords}>
+        {!expanded ? <><header className="bic-sanctum__heading">
           <p>НЕЗАРЕГИСТРИРОВАННЫЙ ЦИФРОВОЙ ПРИХОД</p>
           <h1>THE GRID<br />REMEMBERS<br /><em>WHAT THEY ERASE.</em></h1>
         </header>
@@ -189,16 +315,29 @@ export function BlackIceCathedral({ pathname, viewer, snapshot }: { pathname: st
         <div className="bic-rose" aria-label="Выбор раздела">
           <div className="bic-rose__architecture" aria-hidden="true"><i /><i /><i /><i /><i /><i /></div>
           <div className="bic-rose__orbit orbit-a" aria-hidden="true" /><div className="bic-rose__orbit orbit-b" aria-hidden="true" />
-          <div className="bic-rose__eye" aria-hidden="true"><Eye /><span>{rite.numeral}</span><i /></div>
+          <div className="bic-rose__eye" aria-hidden="true"><Eye /><i /></div>
           {rites.map(({ key, numeral, label, icon: Icon }) => <button type="button" key={key} className={`bic-rite bic-rite--${key} ${active === key ? "active" : ""}`} aria-pressed={active === key} onClick={() => choose(key)}><span>{numeral}</span><Icon /><b>{label}</b></button>)}
           <div className="bic-rose__readout"><span>{rite.numeral}{" // "}{rite.label}</span><small>{rite.whisper}</small></div>
         </div>
 
         <section className={`bic-revelation ${chosen.danger ? "is-danger" : ""}`} key={`${active}-${index}`}>
           <header><span>{chosen.overline}</span><b>{String(index + 1).padStart(2, "0")} / {String(activeItems.length).padStart(2, "0")}</b></header>
-          <div><span className="bic-revelation__mark"><ActiveIcon /></span><article><h2>{chosen.title}</h2><p>{chosen.copy}</p><footer>{chosen.meta}</footer></article></div>
+          <button type="button" className="bic-revelation__open" onClick={() => setOpenedRecord(index)}><span className="bic-revelation__mark"><ActiveIcon /></span><article><h2>{chosen.title}</h2><p>{chosen.copy}</p><footer>{chosen.meta} · ОТКРЫТЬ ЗАПИСЬ</footer></article></button>
           <nav aria-label="Записи выбранного раздела">{activeItems.map((item, itemIndex) => <button type="button" key={`${item.title}-${itemIndex}`} className={index === itemIndex ? "active" : ""} onClick={() => setIndex(itemIndex)} aria-label={`Открыть запись ${itemIndex + 1}`}><i /></button>)}</nav>
         </section>
+        {opened ? <article className="bic-record" key={`${active}-record-${openedRecord}`}>
+          <div className="bic-watcher" aria-hidden="true"><Eye /><i /></div>
+          <button type="button" className="bic-record__close" onClick={() => setOpenedRecord(null)} aria-label="Закрыть запись"><X /></button>
+          <p>{opened.overline}</p><ActiveIcon /><h2>{opened.title}</h2><blockquote>{opened.copy}</blockquote><footer>{opened.meta}</footer>
+          <nav><button type="button" onClick={() => setOpenedRecord((Number(openedRecord) - 1 + activeItems.length) % activeItems.length)}><SkipBack /> ПРЕДЫДУЩАЯ</button><button type="button" onClick={() => setOpenedRecord((Number(openedRecord) + 1) % activeItems.length)}>СЛЕДУЮЩАЯ <SkipForward /></button></nav>
+        </article> : null}</> : <section className="bic-sector" key={expanded}>
+          <div className="bic-watcher" aria-hidden="true"><Eye /><i /></div>
+          <header><span>{rite.numeral}{" // RITUAL SECTOR"}</span><button type="button" onClick={() => setExpanded(null)} aria-label="Вернуть ICE-розу"><X /></button><ActiveIcon /><h2>{rite.label}</h2><p>{rite.whisper}</p></header>
+          <div className="bic-sector__records">{activeItems.map((item, itemIndex) => <button type="button" key={`${item.title}-${itemIndex}`} className={itemIndex === index ? "active" : ""} onMouseEnter={() => setIndex(itemIndex)} onFocus={() => setIndex(itemIndex)} onClick={() => { setIndex(itemIndex); setOpenedRecord(itemIndex); }}><span>{String(itemIndex + 1).padStart(2, "0")}</span><div><small>{item.overline}</small><h3>{item.title}</h3><p>{item.copy}</p></div><b>{item.meta}</b></button>)}</div>
+          <nav className="bic-sector__rites">{rites.map(({ key, numeral, label, icon: Icon }) => <button type="button" key={key} className={key === active ? "active" : ""} onClick={() => { setActive(key); setIndex(0); setOpenedRecord(null); setExpanded(key); }}><span>{numeral}</span><Icon /><b>{label}</b></button>)}</nav>
+          <footer>КОЛЕСО / ← → ЛИСТАТЬ · ESC ВЕРНУТЬ РОЗУ · НАЖАТЬ ЗАПИСЬ ДЛЯ РАСКРЫТИЯ</footer>
+          {opened ? <article className="bic-record" key={`${active}-record-${openedRecord}`}><div className="bic-watcher" aria-hidden="true"><Eye /><i /></div><button type="button" className="bic-record__close" onClick={() => setOpenedRecord(null)} aria-label="Закрыть запись"><X /></button><p>{opened.overline}</p><ActiveIcon /><h2>{opened.title}</h2><blockquote>{opened.copy}</blockquote><footer>{opened.meta}</footer><nav><button type="button" onClick={() => setOpenedRecord((Number(openedRecord) - 1 + activeItems.length) % activeItems.length)}><SkipBack /> ПРЕДЫДУЩАЯ</button><button type="button" onClick={() => setOpenedRecord((Number(openedRecord) + 1) % activeItems.length)}>СЛЕДУЮЩАЯ <SkipForward /></button></nav></article> : null}
+        </section>}
       </section>
 
       <aside className="bic-confessional">
@@ -217,5 +356,6 @@ export function BlackIceCathedral({ pathname, viewer, snapshot }: { pathname: st
       <div><i /><b>{snapshot.campaignName}</b><i /></div>
       <span><Zap /> OVERWATCH 004 / 040</span>
     </footer>
+    <CathedralChoir />
   </div>;
 }
