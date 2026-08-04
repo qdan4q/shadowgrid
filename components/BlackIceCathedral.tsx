@@ -214,6 +214,7 @@ export function BlackIceCathedral({ pathname, viewer, snapshot }: { pathname: st
   const [expanded, setExpanded] = useState<RiteKey | null>(null);
   const [openedRecord, setOpenedRecord] = useState<number | null>(null);
   const wheelLock = useRef(false);
+  const recordCloseRef = useRef<HTMLButtonElement>(null);
   const revelations = useMemo(() => buildRevelations(snapshot, viewer), [snapshot, viewer]);
   const rite = rites.find((item) => item.key === active) ?? rites[0];
   const ActiveIcon = rite.icon;
@@ -249,6 +250,12 @@ export function BlackIceCathedral({ pathname, viewer, snapshot }: { pathname: st
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [activeItems.length, expanded, openedRecord]);
+
+  useEffect(() => {
+    if (openedRecord === null) return;
+    const frame = window.requestAnimationFrame(() => recordCloseRef.current?.focus({ preventScroll: true }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [openedRecord]);
 
   function choose(next: RiteKey) {
     if (next === active) {
@@ -327,7 +334,7 @@ export function BlackIceCathedral({ pathname, viewer, snapshot }: { pathname: st
         </section>
         {opened ? <article className="bic-record" key={`${active}-record-${openedRecord}`}>
           <div className="bic-watcher" aria-hidden="true"><Eye /><i /></div>
-          <button type="button" className="bic-record__close" onClick={() => setOpenedRecord(null)} aria-label="Закрыть запись"><X /></button>
+          <button ref={recordCloseRef} type="button" className="bic-record__close" onClick={() => setOpenedRecord(null)} aria-label="Закрыть запись"><X /></button>
           <p>{opened.overline}</p><ActiveIcon /><h2>{opened.title}</h2><blockquote>{opened.copy}</blockquote><footer>{opened.meta}</footer>
           <nav><button type="button" onClick={() => setOpenedRecord((Number(openedRecord) - 1 + activeItems.length) % activeItems.length)}><SkipBack /> ПРЕДЫДУЩАЯ</button><button type="button" onClick={() => setOpenedRecord((Number(openedRecord) + 1) % activeItems.length)}>СЛЕДУЮЩАЯ <SkipForward /></button></nav>
         </article> : null}</> : <section className="bic-sector" key={expanded}>
@@ -336,7 +343,7 @@ export function BlackIceCathedral({ pathname, viewer, snapshot }: { pathname: st
           <div className="bic-sector__records">{activeItems.map((item, itemIndex) => <button type="button" key={`${item.title}-${itemIndex}`} className={itemIndex === index ? "active" : ""} onMouseEnter={() => setIndex(itemIndex)} onFocus={() => setIndex(itemIndex)} onClick={() => { setIndex(itemIndex); setOpenedRecord(itemIndex); }}><span>{String(itemIndex + 1).padStart(2, "0")}</span><div><small>{item.overline}</small><h3>{item.title}</h3><p>{item.copy}</p></div><b>{item.meta}</b></button>)}</div>
           <nav className="bic-sector__rites">{rites.map(({ key, numeral, label, icon: Icon }) => <button type="button" key={key} className={key === active ? "active" : ""} onClick={() => { setActive(key); setIndex(0); setOpenedRecord(null); setExpanded(key); }}><span>{numeral}</span><Icon /><b>{label}</b></button>)}</nav>
           <footer>КОЛЕСО / ← → ЛИСТАТЬ · ESC ВЕРНУТЬ РОЗУ · НАЖАТЬ ЗАПИСЬ ДЛЯ РАСКРЫТИЯ</footer>
-          {opened ? <article className="bic-record" key={`${active}-record-${openedRecord}`}><div className="bic-watcher" aria-hidden="true"><Eye /><i /></div><button type="button" className="bic-record__close" onClick={() => setOpenedRecord(null)} aria-label="Закрыть запись"><X /></button><p>{opened.overline}</p><ActiveIcon /><h2>{opened.title}</h2><blockquote>{opened.copy}</blockquote><footer>{opened.meta}</footer><nav><button type="button" onClick={() => setOpenedRecord((Number(openedRecord) - 1 + activeItems.length) % activeItems.length)}><SkipBack /> ПРЕДЫДУЩАЯ</button><button type="button" onClick={() => setOpenedRecord((Number(openedRecord) + 1) % activeItems.length)}>СЛЕДУЮЩАЯ <SkipForward /></button></nav></article> : null}
+          {opened ? <article className="bic-record" key={`${active}-record-${openedRecord}`}><div className="bic-watcher" aria-hidden="true"><Eye /><i /></div><button ref={recordCloseRef} type="button" className="bic-record__close" onClick={() => setOpenedRecord(null)} aria-label="Закрыть запись"><X /></button><p>{opened.overline}</p><ActiveIcon /><h2>{opened.title}</h2><blockquote>{opened.copy}</blockquote><footer>{opened.meta}</footer><nav><button type="button" onClick={() => setOpenedRecord((Number(openedRecord) - 1 + activeItems.length) % activeItems.length)}><SkipBack /> ПРЕДЫДУЩАЯ</button><button type="button" onClick={() => setOpenedRecord((Number(openedRecord) + 1) % activeItems.length)}>СЛЕДУЮЩАЯ <SkipForward /></button></nav></article> : null}
         </section>}
       </section>
 
