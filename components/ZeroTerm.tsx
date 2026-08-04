@@ -18,23 +18,7 @@ type Packet = {
   meta: string;
   alarm?: boolean;
 };
-type YouTubePlayer = {
-  playVideo: () => void;
-  pauseVideo: () => void;
-  getCurrentTime: () => number;
-  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
-  setVolume: (volume: number) => void;
-  mute: () => void;
-  unMute: () => void;
-  isMuted: () => boolean;
-  cueVideoById: (videoId: string) => void;
-  getVideoData: () => { title?: string };
-  destroy: () => void;
-};
-type YouTubeApi = {
-  Player: new (element: HTMLElement, options: Record<string, unknown>) => YouTubePlayer;
-  PlayerState: { PLAYING: number };
-};
+type AudioTrack = { title: string; artist: string; src: string };
 
 const modeOrder: Mode[] = ["pulse", "contracts", "exchange", "whispers", "persona", "root"];
 const modeMeta: Record<Mode, { key: string; command: string; label: string; path: string }> = {
@@ -46,7 +30,14 @@ const modeMeta: Record<Mode, { key: string; command: string; label: string; path
   root: { key: "F6", command: "root", label: "ROOT-СЛОЙ", path: "/root/overwatch" },
 };
 
-const ZERO_TERM_TAPE = "AF8LSurfct4";
+const GRID_MUSIC: AudioTrack[] = [
+  "Bionatriz", "Bitrack", "Braves", "Coden", "Cybranes", "Darken", "Glamyan", "Granius", "Leista",
+  "Melanot", "Natroleum", "Quantow", "Radional", "Realmea", "Stream", "Ventuny", "Zatrum",
+].map((title, index) => ({
+  title,
+  artist: "FILFAR",
+  src: `/grid_music/${String(index + 1).padStart(2, "0")}-${title.toLowerCase()}.m4a`,
+}));
 
 function value(row: Row, ...keys: string[]): string {
   for (const key of keys) {
@@ -72,21 +63,10 @@ function makeRouteToken(): string {
   return Array.from({ length: 4 }, () => segments[Math.floor(Math.random() * segments.length)]).join(">");
 }
 
-function youtubeVideoId(input: string): string | null {
-  const trimmed = input.trim();
-  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
-  try {
-    const url = new URL(trimmed);
-    if (url.hostname === "youtu.be") return url.pathname.split("/").filter(Boolean)[0]?.slice(0, 11) ?? null;
-    if (url.hostname.includes("youtube.com")) {
-      const direct = url.searchParams.get("v");
-      if (direct) return direct.slice(0, 11);
-      const parts = url.pathname.split("/").filter(Boolean);
-      const marker = parts.findIndex((part) => ["embed", "shorts", "live"].includes(part));
-      if (marker >= 0) return parts[marker + 1]?.slice(0, 11) ?? null;
-    }
-  } catch { return null; }
-  return null;
+function audioClock(seconds: number): string {
+  if (!Number.isFinite(seconds)) return "00:00";
+  const whole = Math.max(0, Math.floor(seconds));
+  return `${String(Math.floor(whole / 60)).padStart(2, "0")}:${String(whole % 60).padStart(2, "0")}`;
 }
 
 function buildPackets(snapshot: CampaignSnapshot, viewer: ViewerContext): Record<Mode, Packet[]> {
@@ -182,91 +162,72 @@ function BootSequence({ onDone }: { onDone: () => void }) {
 }
 
 function AudioTerminal({ openSignal = 0 }: { openSignal?: number }) {
-  const mountRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<YouTubePlayer | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(24);
-  const [title, setTitle] = useState("ZERO/TERM NIGHT TAPE // UPLINK WAITING");
-  const [sourceInput, setSourceInput] = useState("");
-  const [sourceError, setSourceError] = useState("");
+  const [trackIndex, setTrackIndex] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [shuffle, setShuffle] = useState(false);
+  const [repeatOne, setRepeatOne] = useState(false);
+  const track = GRID_MUSIC[trackIndex];
 
   useEffect(() => { if (openSignal > 0) setOpen(true); }, [openSignal]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const apiWindow = window as typeof window & { YT?: YouTubeApi; onYouTubeIframeAPIReady?: () => void };
-    const createPlayer = () => {
-      if (cancelled || !mountRef.current || !apiWindow.YT || playerRef.current) return;
-      const api = apiWindow.YT;
-      playerRef.current = new api.Player(mountRef.current, {
-        width: "320",
-        height: "180",
-        videoId: ZERO_TERM_TAPE,
-        playerVars: { controls: 1, playsinline: 1, rel: 0, modestbranding: 1 },
-        events: {
-          onReady: (event: { target: YouTubePlayer }) => { event.target.setVolume(24); setReady(true); },
-          onStateChange: (event: { data: number; target: YouTubePlayer }) => {
-            setPlaying(event.data === api.PlayerState.PLAYING);
-            const nextTitle = event.target.getVideoData().title;
-            if (nextTitle) setTitle(nextTitle);
-          },
-        },
-      });
-    };
-    if (apiWindow.YT?.Player) createPlayer();
-    else {
-      const previous = apiWindow.onYouTubeIframeAPIReady;
-      apiWindow.onYouTubeIframeAPIReady = () => { previous?.(); createPlayer(); };
-      if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
-        const script = document.createElement("script");
-        script.src = "https://www.youtube.com/iframe_api";
-        script.async = true;
-        document.head.appendChild(script);
-      }
-    }
-    return () => { cancelled = true; playerRef.current?.destroy(); playerRef.current = null; };
-  }, []);
+  useEffect(() => { setReady(false); setCurrentTime(0); setDuration(0); }, [trackIndex]);
+  useEffect(() => { if (audioRef.current) audioRef.current.volume = volume / 100; }, [volume, trackIndex]);
 
   function togglePlayback() {
-    if (!playerRef.current) return;
-    if (playing) playerRef.current.pauseVideo(); else playerRef.current.playVideo();
+    if (!audioRef.current) return;
+    if (playing) audioRef.current.pause();
+    else void audioRef.current.play().catch(() => setPlaying(false));
   }
-  function toggleMute() {
-    if (!playerRef.current) return;
-    if (playerRef.current.isMuted()) { playerRef.current.unMute(); setMuted(false); }
-    else { playerRef.current.mute(); setMuted(true); }
+  function nextTrack(forcePlay = playing) {
+    const next = shuffle && GRID_MUSIC.length > 1
+      ? (trackIndex + 1 + Math.floor(Math.random() * (GRID_MUSIC.length - 1))) % GRID_MUSIC.length
+      : (trackIndex + 1) % GRID_MUSIC.length;
+    setPlaying(forcePlay);
+    setTrackIndex(next);
   }
-  function skip(seconds: number) {
-    if (!playerRef.current) return;
-    playerRef.current.seekTo(Math.max(0, playerRef.current.getCurrentTime() + seconds), true);
+  function previousTrack() {
+    if (audioRef.current && audioRef.current.currentTime > 4) {
+      audioRef.current.currentTime = 0;
+      setCurrentTime(0);
+      return;
+    }
+    setTrackIndex((trackIndex - 1 + GRID_MUSIC.length) % GRID_MUSIC.length);
   }
-  function loadTape(event: FormEvent) {
-    event.preventDefault();
-    const videoId = youtubeVideoId(sourceInput);
-    if (!videoId || !playerRef.current) { setSourceError(videoId ? "PLAYER NOT READY" : "INVALID YOUTUBE SIGNAL"); return; }
-    playerRef.current.cueVideoById(videoId);
-    setTitle(`LOADED TAPE // ${videoId}`);
-    setSourceError("");
+  function ended() {
+    if (repeatOne && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      void audioRef.current.play();
+    } else nextTrack(true);
   }
 
   return <aside className={`zt-audio ${open ? "is-open" : ""}`}>
-    <button type="button" className="zt-audio__tab" onClick={() => setOpen(!open)} aria-expanded={open}>[{playing ? "●" : " "}] PIRATE_AUDIO</button>
+    <button type="button" className="zt-audio__tab" onClick={() => setOpen(!open)} aria-expanded={open}>[{playing ? "●" : " "}] FILFAR_ARCHIVE</button>
     <section>
-      <header><span>/dev/radio/night_tape</span><button type="button" onClick={() => setOpen(false)}>[X]</button></header>
-      <div className="zt-audio__screen"><div ref={mountRef} /><i /></div>
-      <p title={title}>{title}</p>
-      <form className="zt-audio__source" onSubmit={loadTape}><input value={sourceInput} onChange={(event) => setSourceInput(event.target.value)} placeholder="PASTE YOUTUBE TAPE URL" aria-label="Ссылка на YouTube-ролик" /><button>LOAD</button>{sourceError ? <span>{sourceError}</span> : null}</form>
-      <nav>
-        <button type="button" onClick={() => skip(-30)} disabled={!ready}>-30</button>
+      <header><span>/mnt/audio/filfar_archive</span><button type="button" onClick={() => setOpen(false)}>[X]</button></header>
+      <div className={`zt-audio__screen ${playing ? "is-playing" : ""}`}>
+        <audio key={track.src} ref={audioRef} src={track.src} preload="metadata" autoPlay={playing} muted={muted}
+          onCanPlay={() => setReady(true)} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
+          onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)} onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)} onEnded={ended} />
+        <div className="zt-audio__bars" aria-hidden="true">{Array.from({ length: 29 }, (_, index) => <i key={index} style={{ "--audio-bar": `${18 + ((index * 37) % 78)}%`, "--audio-delay": `${-(index % 7) * 0.09}s` } as CSSProperties} />)}</div>
+        <p><span>TRACK {String(trackIndex + 1).padStart(2, "0")} / {GRID_MUSIC.length}</span><strong>{track.title}</strong><b>{track.artist}</b></p><i />
+      </div>
+      <div className="zt-audio__timeline"><span>{audioClock(currentTime)}</span><input aria-label="Позиция трека" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} onChange={(event) => { const next = Number(event.target.value); if (audioRef.current) audioRef.current.currentTime = next; setCurrentTime(next); }} /><span>{audioClock(duration)}</span></div>
+      <nav className="zt-audio__controls">
+        <button type="button" onClick={previousTrack} disabled={!ready}>|&lt;</button>
         <button type="button" onClick={togglePlayback} disabled={!ready}>{playing ? "PAUSE" : "PLAY"}</button>
-        <button type="button" onClick={() => skip(30)} disabled={!ready}>+30</button>
-        <button type="button" onClick={toggleMute} disabled={!ready}>{muted ? "UNMUTE" : "MUTE"}</button>
+        <button type="button" onClick={() => nextTrack()} disabled={!ready}>&gt;|</button>
+        <button type="button" className={shuffle ? "active" : ""} onClick={() => setShuffle(!shuffle)}>RND</button>
+        <button type="button" className={repeatOne ? "active" : ""} onClick={() => setRepeatOne(!repeatOne)}>R1</button>
       </nav>
-      <label><span>VOL {String(volume).padStart(2, "0")}</span><input type="range" min="0" max="100" value={volume} onChange={(event) => { const next = Number(event.target.value); setVolume(next); playerRef.current?.setVolume(next); }} /></label>
-      <footer>{ready ? "CARRIER LOCKED // CHAPTERS IN NATIVE TIMELINE" : "NEGOTIATING CARRIER..."} · <a href="https://www.youtube.com/watch?v=AF8LSurfct4" target="_blank" rel="noreferrer">SOURCE</a></footer>
+      <label className="zt-audio__volume"><button type="button" onClick={() => setMuted(!muted)}>{muted ? "MUTE" : "VOL"}</button><span>{String(muted ? 0 : volume).padStart(2, "0")}</span><input aria-label="Громкость" type="range" min="0" max="100" value={volume} onChange={(event) => setVolume(Number(event.target.value))} /></label>
+      <div className="zt-audio__playlist" aria-label="Плейлист Filfar">{GRID_MUSIC.map((item, index) => <button type="button" className={index === trackIndex ? "active" : ""} key={item.src} onClick={() => setTrackIndex(index)}><span>{String(index + 1).padStart(2, "0")}</span><b>{item.artist}</b><em>{item.title}</em></button>)}</div>
+      <footer>{ready ? "LOCAL CARRIER LOCKED // 17 TRACKS" : "READING ARCHIVE..."} · MUSIC: FILFAR · <a href="https://www.youtube.com/watch?v=AF8LSurfct4" target="_blank" rel="noreferrer">SOURCE</a></footer>
     </section>
   </aside>;
 }
