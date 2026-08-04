@@ -30,6 +30,13 @@ export function LoginScreen() {
   }
 
   return <main className="bic-gate">
+    <div className="bic-gate-awakening" aria-hidden="true">
+      <div className="bic-gate-awakening__veil"><i /><i /></div>
+      <div className="bic-gate-awakening__sigil"><span /><span /><Eye /><b>IX</b></div>
+      <p>UNLICENSED NODE DETECTED // HOST 73A</p>
+      <ol><li>КОРПОРАТИВНЫЙ МАРШРУТ ОТСЕЧЁН</li><li>СВИДЕТЕЛИ УДАЛЕНЫ ИЗ ЦЕПОЧКИ</li><li>ЧЁРНЫЙ ICE ОТКРЫВАЕТ ГЛАЗ</li></ol>
+      <small>THE THRESHOLD REMEMBERS WHO CROSSED IT</small>
+    </div>
     <div className="bic-gate__rain" aria-hidden="true"><span>01001101<br />NO SIN<br />†<br />73A</span><span>BLACK ICE<br />AWAKE<br />∴</span><span>ᚨ<br />TRACE NULL<br />00110</span><span>TRUST<br />NOBODY<br />†</span><span>HOST 73A<br />EYE<br />00073</span></div>
     <header className="bic-gate__header"><span>LIBER UMBRARUM // HOST 73A</span><b>BLACK ICE CATHEDRAL</b><span>SEATTLE // 04:17</span></header>
     <section className="bic-gate__nave">
