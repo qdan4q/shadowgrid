@@ -31,6 +31,7 @@ export function LoginScreen() {
 
   return (
     <main className="login-gateway">
+      <div className="zt-poweron" aria-hidden="true"><i /><span /><p>ZERO/TERM DISPLAY<br /><b>PHOSPHOR SYNC // 73A</b></p></div>
       <div className="gateway-route" aria-hidden="true">
         <span>РЕТРАНСЛЯТОР//ПУБЛИЧНЫЙ</span><i /><span>СЕТКА-СИЭТЛА</span><i /><span className="route-cut">ОТКЛЮЧЁН</span>
       </div>

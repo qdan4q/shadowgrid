@@ -2,7 +2,7 @@
 
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { FormEvent, PointerEvent, WheelEvent, type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, PointerEvent, WheelEvent, type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ViewerContext } from "../lib/auth";
 import type { CampaignSnapshot } from "../lib/campaign";
 
@@ -27,6 +27,7 @@ type YouTubePlayer = {
   mute: () => void;
   unMute: () => void;
   isMuted: () => boolean;
+  cueVideoById: (videoId: string) => void;
   getVideoData: () => { title?: string };
   destroy: () => void;
 };
@@ -69,6 +70,23 @@ function shortTime(input: unknown): string {
 function makeRouteToken(): string {
   const segments = ["SEA", "PUGET", "NULL", "MIRROR", "GHOST", "73A", "TAC", "VOID"];
   return Array.from({ length: 4 }, () => segments[Math.floor(Math.random() * segments.length)]).join(">");
+}
+
+function youtubeVideoId(input: string): string | null {
+  const trimmed = input.trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
+  try {
+    const url = new URL(trimmed);
+    if (url.hostname === "youtu.be") return url.pathname.split("/").filter(Boolean)[0]?.slice(0, 11) ?? null;
+    if (url.hostname.includes("youtube.com")) {
+      const direct = url.searchParams.get("v");
+      if (direct) return direct.slice(0, 11);
+      const parts = url.pathname.split("/").filter(Boolean);
+      const marker = parts.findIndex((part) => ["embed", "shorts", "live"].includes(part));
+      if (marker >= 0) return parts[marker + 1]?.slice(0, 11) ?? null;
+    }
+  } catch { return null; }
+  return null;
 }
 
 function buildPackets(snapshot: CampaignSnapshot, viewer: ViewerContext): Record<Mode, Packet[]> {
@@ -172,6 +190,8 @@ function AudioTerminal({ openSignal = 0 }: { openSignal?: number }) {
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(24);
   const [title, setTitle] = useState("KEYGEN CHURCH // UPLINK WAITING");
+  const [sourceInput, setSourceInput] = useState("");
+  const [sourceError, setSourceError] = useState("");
 
   useEffect(() => { if (openSignal > 0) setOpen(true); }, [openSignal]);
 
@@ -184,7 +204,7 @@ function AudioTerminal({ openSignal = 0 }: { openSignal?: number }) {
       playerRef.current = new api.Player(mountRef.current, {
         width: "320",
         height: "180",
-        playerVars: { listType: "playlist", list: KEYGEN_UPLOADS, controls: 0, playsinline: 1, rel: 0, modestbranding: 1 },
+        playerVars: { listType: "playlist", list: KEYGEN_UPLOADS, controls: 1, playsinline: 1, rel: 0, modestbranding: 1 },
         events: {
           onReady: (event: { target: YouTubePlayer }) => { event.target.setVolume(24); setReady(true); },
           onStateChange: (event: { data: number; target: YouTubePlayer }) => {
@@ -218,6 +238,14 @@ function AudioTerminal({ openSignal = 0 }: { openSignal?: number }) {
     if (playerRef.current.isMuted()) { playerRef.current.unMute(); setMuted(false); }
     else { playerRef.current.mute(); setMuted(true); }
   }
+  function loadTape(event: FormEvent) {
+    event.preventDefault();
+    const videoId = youtubeVideoId(sourceInput);
+    if (!videoId || !playerRef.current) { setSourceError(videoId ? "PLAYER NOT READY" : "INVALID YOUTUBE SIGNAL"); return; }
+    playerRef.current.cueVideoById(videoId);
+    setTitle(`LOADED TAPE // ${videoId}`);
+    setSourceError("");
+  }
 
   return <aside className={`zt-audio ${open ? "is-open" : ""}`}>
     <button type="button" className="zt-audio__tab" onClick={() => setOpen(!open)} aria-expanded={open}>[{playing ? "●" : " "}] PIRATE_AUDIO</button>
@@ -225,6 +253,7 @@ function AudioTerminal({ openSignal = 0 }: { openSignal?: number }) {
       <header><span>/dev/radio/keygen_church</span><button type="button" onClick={() => setOpen(false)}>[X]</button></header>
       <div className="zt-audio__screen"><div ref={mountRef} /><i /></div>
       <p title={title}>{title}</p>
+      <form className="zt-audio__source" onSubmit={loadTape}><input value={sourceInput} onChange={(event) => setSourceInput(event.target.value)} placeholder="PASTE YOUTUBE TAPE URL" aria-label="Ссылка на YouTube-ролик" /><button>LOAD</button>{sourceError ? <span>{sourceError}</span> : null}</form>
       <nav>
         <button type="button" onClick={() => playerRef.current?.previousVideo()} disabled={!ready}>|&lt;</button>
         <button type="button" onClick={togglePlayback} disabled={!ready}>{playing ? "PAUSE" : "PLAY"}</button>
@@ -247,10 +276,11 @@ export function ZeroTerm({ pathname, viewer, snapshot }: { pathname: string; vie
   const [composer, setComposer] = useState(false);
   const [localDrops, setLocalDrops] = useState<Packet[]>([]);
   const [phosphor, setPhosphor] = useState<Phosphor>("green");
-  const [booting, setBooting] = useState(true);
+  const [booting, setBooting] = useState(false);
   const [audioSignal, setAudioSignal] = useState(0);
   const [routeToken, setRouteToken] = useState("SEA>NULL>73A");
   const [panic, setPanic] = useState(false);
+  const [closing, setClosing] = useState<"detail" | "composer" | "panic" | null>(null);
   const commandRef = useRef<HTMLInputElement>(null);
   const wheelLock = useRef(false);
   const packetMap = useMemo(() => buildPackets(snapshot, viewer), [snapshot, viewer]);
@@ -258,20 +288,22 @@ export function ZeroTerm({ pathname, viewer, snapshot }: { pathname: string; vie
   const unread = snapshot.conversations.reduce((sum, row) => sum + Number(row.unread_count ?? 0), 0);
   const isGm = viewer.actor.roles.includes("GAME_MASTER");
 
-  useEffect(() => {
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const seen = window.sessionStorage.getItem("shadowgrid.zero-term.boot.v1") === "seen";
-    if (reduced || seen) { setBooting(false); return; }
-    const timer = window.setTimeout(() => { setBooting(false); window.sessionStorage.setItem("shadowgrid.zero-term.boot.v1", "seen"); }, 4300);
-    return () => window.clearTimeout(timer);
-  }, []);
-
   useEffect(() => { setSelected(0); setDetail(null); }, [mode]);
+
+  const closeLayer = useCallback((layer: "detail" | "composer" | "panic") => {
+    setClosing(layer);
+    window.setTimeout(() => {
+      if (layer === "detail") setDetail(null);
+      if (layer === "composer") setComposer(false);
+      if (layer === "panic") setPanic(false);
+      setClosing(null);
+    }, 230);
+  }, []);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        if (panic) setPanic(false); else if (composer) setComposer(false); else if (detail) setDetail(null); else commandRef.current?.focus();
+        if (panic) closeLayer("panic"); else if (composer) closeLayer("composer"); else if (detail) closeLayer("detail"); else commandRef.current?.focus();
         return;
       }
       const functionIndex = ["F1", "F2", "F3", "F4", "F5", "F6"].indexOf(event.key);
@@ -287,6 +319,7 @@ export function ZeroTerm({ pathname, viewer, snapshot }: { pathname: string; vie
       }
       const target = event.target as HTMLElement | null;
       if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      if (detail && event.key.toLowerCase() === "q") { event.preventDefault(); closeLayer("detail"); return; }
       if (event.key === "/") { event.preventDefault(); commandRef.current?.focus(); return; }
       if (event.key !== "ArrowDown" && event.key !== "ArrowUp" && event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Enter") return;
       event.preventDefault();
@@ -300,7 +333,7 @@ export function ZeroTerm({ pathname, viewer, snapshot }: { pathname: string; vie
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [composer, detail, packets, panic, selected]);
+  }, [closeLayer, composer, detail, packets, panic, selected]);
 
   function changeMode(next: Mode) {
     if (next === "root" && !isGm) setHistory((items) => [...items.slice(-4), "root: permission denied; showing visible host topology"]);
@@ -323,7 +356,7 @@ export function ZeroTerm({ pathname, viewer, snapshot }: { pathname: string; vie
     else if (verb === "music") setAudioSignal((signal) => signal + 1);
     else if (verb === "scramble") scrambleRoute();
     else if (verb === "phosphor" && ["green", "amber", "ice"].includes(argument ?? "")) setPhosphor(argument as Phosphor);
-    else if (verb === "reboot") { window.sessionStorage.removeItem("shadowgrid.zero-term.boot.v1"); setBooting(true); window.setTimeout(() => setBooting(false), 4300); }
+    else if (verb === "reboot") { setBooting(true); window.setTimeout(() => setBooting(false), 4300); }
     else if (verb === "clear") setHistory([]);
     else if (verb === "burn" || verb === "panic") setPanic(true);
     else setHistory((items) => [...items, `${verb}: command not found. the grid does not admit everything it knows.`]);
@@ -357,7 +390,7 @@ export function ZeroTerm({ pathname, viewer, snapshot }: { pathname: string; vie
     if (!body) return;
     const packet: Packet = { id: `local-${Date.now()}`, stamp: "NOW", source: viewer.effectiveUser.runnerAlias, title: `[DEAD-DROP/${channel}]`, body, meta: `TTL ${data.get("ttl") || "10 MIN"} · SESSION MEMORY ONLY` };
     setLocalDrops((items) => [packet, ...items]);
-    setMode("pulse"); setSelected(0); setComposer(false);
+    setMode("pulse"); setSelected(0); closeLayer("composer");
     setHistory((items) => [...items.slice(-5), `packet staged in volatile memory: ${packet.id}`]);
     event.currentTarget.reset();
   }
@@ -368,8 +401,8 @@ export function ZeroTerm({ pathname, viewer, snapshot }: { pathname: string; vie
   }
 
   return <div className={`zt zt--${phosphor}`} onPointerMove={trackPointer}>
-    {booting ? <BootSequence onDone={() => { setBooting(false); window.sessionStorage.setItem("shadowgrid.zero-term.boot.v1", "seen"); }} /> : null}
-    <div className="zt-cursor" aria-hidden="true"><i /><span>+</span></div>
+    {booting ? <BootSequence onDone={() => setBooting(false)} /> : null}
+    <div className="zt-cursor" aria-hidden="true"><i /><span>_</span></div>
     <div className="zt-crt" aria-hidden="true" /><div className="zt-tear" aria-hidden="true" /><div className="zt-noise" aria-hidden="true" />
 
     <header className="zt-status">
@@ -390,7 +423,7 @@ export function ZeroTerm({ pathname, viewer, snapshot }: { pathname: string; vie
       <section className="zt-workspace" onWheel={cycle}>
         <header><span>guest@shadowgrid:{modeMeta[mode].path}$ ls -la</span><b>{String(packets.length).padStart(3, "0")} PACKETS</b></header>
         <div className="zt-watermark" aria-hidden="true"><span>ZERO</span><span>TERM</span></div>
-        <div className="zt-motd"><span>MESSAGE OF THE NIGHT //</span><b> ЕСЛИ СЕТЬ НАЗЫВАЕТ ТЕБЯ ПО ИМЕНИ — ВЫДЕРНИ КАБЕЛЬ.</b></div>
+        <div className="zt-motd"><span>MESSAGE OF THE NIGHT //</span><i><b>ЕСЛИ СЕТЬ НАЗЫВАЕТ ТЕБЯ ПО ИМЕНИ — ВЫДЕРНИ КАБЕЛЬ.</b></i></div>
         <div className="zt-list" role="listbox" aria-label={modeMeta[mode].label}>
           {packets.length ? packets.map((packet, index) => <button type="button" role="option" aria-selected={selected === index} key={packet.id} className={`${selected === index ? "selected" : ""} ${packet.alarm ? "alarm" : ""}`} onMouseEnter={() => setSelected(index)} onFocus={() => setSelected(index)} onClick={() => { setSelected(index); setDetail(packet); }}>
             <span>{String(index + 1).padStart(2, "0")}</span><time>{packet.stamp}</time><b>&lt;{packet.source}&gt;</b><p>{packet.title}</p><small>{packet.meta}</small>
@@ -411,15 +444,15 @@ export function ZeroTerm({ pathname, viewer, snapshot }: { pathname: string; vie
       <span>guest@shadowgrid:{modeMeta[mode].path}$</span><input ref={commandRef} value={command} onChange={(event) => setCommand(event.target.value)} placeholder="type help, or lie convincingly..." aria-label="Команда ZERO TERM" autoComplete="off" /><button>EXEC ↵</button>
     </form>
 
-    {detail ? <article className="zt-pager" aria-modal="true" role="dialog" aria-label={detail.title}>
-      <header><span>LESS(1) // {detail.id}</span><button type="button" onClick={() => setDetail(null)}>[Q] QUIT</button></header>
+    {detail ? <article className={`zt-pager ${closing === "detail" ? "is-closing" : ""}`} aria-modal="true" role="dialog" aria-label={detail.title}>
+      <header><span>LESS(1) // {detail.id}</span><button type="button" onClick={() => closeLayer("detail")}>[Q] QUIT</button></header>
       <div><p>{detail.source} @ {detail.stamp}</p><h1>{detail.title}</h1><blockquote>{detail.body}</blockquote><footer>{detail.meta}</footer></div>
       <nav><button type="button" onClick={() => { const next = (selected - 1 + packets.length) % packets.length; setSelected(next); setDetail(packets[next]); }}>← PREV</button><span>{selected + 1} / {packets.length}</span><button type="button" onClick={() => { const next = (selected + 1) % packets.length; setSelected(next); setDetail(packets[next]); }}>NEXT →</button></nav>
     </article> : null}
 
-    {composer ? <div className="zt-modal"><form className="zt-compose" onSubmit={submitDrop}><header><span>VI /tmp/dead-drop.packet</span><button type="button" onClick={() => setComposer(false)}>[ESC]</button></header><label>CHANNEL<input name="channel" defaultValue="SEA/GENERAL" maxLength={24} /></label><label>PAYLOAD<textarea name="message" rows={8} required maxLength={900} autoFocus placeholder="Настоящие имена будут заменены шумом..." /></label><label>SELF-DESTRUCT<select name="ttl" defaultValue="10 MIN"><option>10 MIN</option><option>1 HOUR</option><option>AT LOGOUT</option></select></label><footer><span>:wq</span><button>WRITE TO VOLATILE MEMORY</button></footer></form></div> : null}
+    {composer ? <div className={`zt-modal ${closing === "composer" ? "is-closing" : ""}`}><form className="zt-compose" onSubmit={submitDrop}><header><span>VI /tmp/dead-drop.packet</span><button type="button" onClick={() => closeLayer("composer")}>[ESC]</button></header><label>CHANNEL<input name="channel" defaultValue="SEA/GENERAL" maxLength={24} /></label><label>PAYLOAD<textarea name="message" rows={8} required maxLength={900} autoFocus placeholder="Настоящие имена будут заменены шумом..." /></label><label>SELF-DESTRUCT<select name="ttl" defaultValue="10 MIN"><option>10 MIN</option><option>1 HOUR</option><option>AT LOGOUT</option></select></label><footer><span>:wq</span><button>WRITE TO VOLATILE MEMORY</button></footer></form></div> : null}
 
-    {panic ? <div className="zt-panic"><section><p>kill -9 shadowgrid_session</p><h1>BURN<br />THIS<br />ROUTE?</h1><span>Локальная сессия будет уничтожена. Память терминала останется только послесвечением.</span><div><button type="button" onClick={() => setPanic(false)}>CANCEL</button><button type="button" onClick={logout}>CONFIRM BURN</button></div></section></div> : null}
+    {panic ? <div className={`zt-panic ${closing === "panic" ? "is-closing" : ""}`}><section><p>kill -9 shadowgrid_session</p><h1>BURN<br />THIS<br />ROUTE?</h1><span>Локальная сессия будет уничтожена. Память терминала останется только послесвечением.</span><div><button type="button" onClick={() => closeLayer("panic")}>CANCEL</button><button type="button" onClick={logout}>CONFIRM BURN</button></div></section></div> : null}
 
     <AudioTerminal openSignal={audioSignal} />
   </div>;
