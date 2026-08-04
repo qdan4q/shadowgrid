@@ -21,8 +21,8 @@ type Packet = {
 type YouTubePlayer = {
   playVideo: () => void;
   pauseVideo: () => void;
-  nextVideo: () => void;
-  previousVideo: () => void;
+  getCurrentTime: () => number;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
   setVolume: (volume: number) => void;
   mute: () => void;
   unMute: () => void;
@@ -46,7 +46,7 @@ const modeMeta: Record<Mode, { key: string; command: string; label: string; path
   root: { key: "F6", command: "root", label: "ROOT-СЛОЙ", path: "/root/overwatch" },
 };
 
-const KEYGEN_UPLOADS = "UUHgbw5cuDIas28eMvbI8Nqg";
+const ZERO_TERM_TAPE = "AF8LSurfct4";
 
 function value(row: Row, ...keys: string[]): string {
   for (const key of keys) {
@@ -189,7 +189,7 @@ function AudioTerminal({ openSignal = 0 }: { openSignal?: number }) {
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(24);
-  const [title, setTitle] = useState("KEYGEN CHURCH // UPLINK WAITING");
+  const [title, setTitle] = useState("ZERO/TERM NIGHT TAPE // UPLINK WAITING");
   const [sourceInput, setSourceInput] = useState("");
   const [sourceError, setSourceError] = useState("");
 
@@ -204,7 +204,8 @@ function AudioTerminal({ openSignal = 0 }: { openSignal?: number }) {
       playerRef.current = new api.Player(mountRef.current, {
         width: "320",
         height: "180",
-        playerVars: { listType: "playlist", list: KEYGEN_UPLOADS, controls: 1, playsinline: 1, rel: 0, modestbranding: 1 },
+        videoId: ZERO_TERM_TAPE,
+        playerVars: { controls: 1, playsinline: 1, rel: 0, modestbranding: 1 },
         events: {
           onReady: (event: { target: YouTubePlayer }) => { event.target.setVolume(24); setReady(true); },
           onStateChange: (event: { data: number; target: YouTubePlayer }) => {
@@ -238,6 +239,10 @@ function AudioTerminal({ openSignal = 0 }: { openSignal?: number }) {
     if (playerRef.current.isMuted()) { playerRef.current.unMute(); setMuted(false); }
     else { playerRef.current.mute(); setMuted(true); }
   }
+  function skip(seconds: number) {
+    if (!playerRef.current) return;
+    playerRef.current.seekTo(Math.max(0, playerRef.current.getCurrentTime() + seconds), true);
+  }
   function loadTape(event: FormEvent) {
     event.preventDefault();
     const videoId = youtubeVideoId(sourceInput);
@@ -250,18 +255,18 @@ function AudioTerminal({ openSignal = 0 }: { openSignal?: number }) {
   return <aside className={`zt-audio ${open ? "is-open" : ""}`}>
     <button type="button" className="zt-audio__tab" onClick={() => setOpen(!open)} aria-expanded={open}>[{playing ? "●" : " "}] PIRATE_AUDIO</button>
     <section>
-      <header><span>/dev/radio/keygen_church</span><button type="button" onClick={() => setOpen(false)}>[X]</button></header>
+      <header><span>/dev/radio/night_tape</span><button type="button" onClick={() => setOpen(false)}>[X]</button></header>
       <div className="zt-audio__screen"><div ref={mountRef} /><i /></div>
       <p title={title}>{title}</p>
       <form className="zt-audio__source" onSubmit={loadTape}><input value={sourceInput} onChange={(event) => setSourceInput(event.target.value)} placeholder="PASTE YOUTUBE TAPE URL" aria-label="Ссылка на YouTube-ролик" /><button>LOAD</button>{sourceError ? <span>{sourceError}</span> : null}</form>
       <nav>
-        <button type="button" onClick={() => playerRef.current?.previousVideo()} disabled={!ready}>|&lt;</button>
+        <button type="button" onClick={() => skip(-30)} disabled={!ready}>-30</button>
         <button type="button" onClick={togglePlayback} disabled={!ready}>{playing ? "PAUSE" : "PLAY"}</button>
-        <button type="button" onClick={() => playerRef.current?.nextVideo()} disabled={!ready}>&gt;|</button>
+        <button type="button" onClick={() => skip(30)} disabled={!ready}>+30</button>
         <button type="button" onClick={toggleMute} disabled={!ready}>{muted ? "UNMUTE" : "MUTE"}</button>
       </nav>
       <label><span>VOL {String(volume).padStart(2, "0")}</span><input type="range" min="0" max="100" value={volume} onChange={(event) => { const next = Number(event.target.value); setVolume(next); playerRef.current?.setVolume(next); }} /></label>
-      <footer>{ready ? "CARRIER LOCKED" : "NEGOTIATING CARRIER..."} · <a href="https://www.youtube.com/channel/UCHgbw5cuDIas28eMvbI8Nqg" target="_blank" rel="noreferrer">SOURCE</a></footer>
+      <footer>{ready ? "CARRIER LOCKED // CHAPTERS IN NATIVE TIMELINE" : "NEGOTIATING CARRIER..."} · <a href="https://www.youtube.com/watch?v=AF8LSurfct4" target="_blank" rel="noreferrer">SOURCE</a></footer>
     </section>
   </aside>;
 }
@@ -276,7 +281,7 @@ export function ZeroTerm({ pathname, viewer, snapshot }: { pathname: string; vie
   const [composer, setComposer] = useState(false);
   const [localDrops, setLocalDrops] = useState<Packet[]>([]);
   const [phosphor, setPhosphor] = useState<Phosphor>("green");
-  const [booting, setBooting] = useState(false);
+  const [booting, setBooting] = useState(true);
   const [audioSignal, setAudioSignal] = useState(0);
   const [routeToken, setRouteToken] = useState("SEA>NULL>73A");
   const [panic, setPanic] = useState(false);
@@ -287,6 +292,12 @@ export function ZeroTerm({ pathname, viewer, snapshot }: { pathname: string; vie
   const packets = useMemo(() => mode === "pulse" ? [...localDrops, ...packetMap.pulse] : packetMap[mode], [localDrops, mode, packetMap]);
   const unread = snapshot.conversations.reduce((sum, row) => sum + Number(row.unread_count ?? 0), 0);
   const isGm = viewer.actor.roles.includes("GAME_MASTER");
+
+  useEffect(() => {
+    if (!booting) return;
+    const timer = window.setTimeout(() => setBooting(false), 4400);
+    return () => window.clearTimeout(timer);
+  }, [booting]);
 
   useEffect(() => { setSelected(0); setDetail(null); }, [mode]);
 
@@ -356,7 +367,7 @@ export function ZeroTerm({ pathname, viewer, snapshot }: { pathname: string; vie
     else if (verb === "music") setAudioSignal((signal) => signal + 1);
     else if (verb === "scramble") scrambleRoute();
     else if (verb === "phosphor" && ["green", "amber", "ice"].includes(argument ?? "")) setPhosphor(argument as Phosphor);
-    else if (verb === "reboot") { setBooting(true); window.setTimeout(() => setBooting(false), 4300); }
+    else if (verb === "reboot") setBooting(true);
     else if (verb === "clear") setHistory([]);
     else if (verb === "burn" || verb === "panic") setPanic(true);
     else setHistory((items) => [...items, `${verb}: command not found. the grid does not admit everything it knows.`]);
