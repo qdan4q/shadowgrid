@@ -6,12 +6,13 @@ import { canOpenGmRoute, loadCampaignSnapshot, type CampaignSnapshot } from "../
 import { LoginScreen, PublicNotice } from "../../components/LoginScreen";
 import { DesignLab } from "../../components/DesignLab";
 import { ShadowGridApp } from "../../components/ShadowGridApp";
+import { ZeroTerm } from "../../components/ZeroTerm";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "ShadowGrid // Хост Дождливого города",
-  description: "Частный хост Матрицы для раннеров и Мастеров игры.",
+  title: "ZERO/TERM // ShadowGrid",
+  description: "Чистая текстовая BBS без публичного грида, SIN и корпоративных журналов.",
 };
 
 const publicPages = new Set(["login", "design-lab", "access-denied", "account-restricted", "maintenance"]);
@@ -45,5 +46,5 @@ export default async function ShadowGridRoute({ params }: { params: Promise<{ pa
   }
   if (route.startsWith("gm") && !canOpenGmRoute(viewer, route)) redirect("/access-denied");
   const snapshot = await loadCampaignSnapshot(viewer);
-  return <ShadowGridApp pathname={`/${route}`} viewer={viewer} snapshot={snapshot} />;
+  return <ZeroTerm pathname={`/${route}`} viewer={viewer} snapshot={snapshot} />;
 }

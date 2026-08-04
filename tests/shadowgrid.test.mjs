@@ -9,12 +9,13 @@ test("defines the ShadowGrid access gateway without starter residue", async () =
     readFile(new URL("../app/[[...path]]/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
   ]);
-  assert.match(layout, /ShadowGrid \/\/ Хост Дождливого города/i);
+  assert.match(layout, /ZERO\/TERM \/\/ ShadowGrid/i);
   assert.match(layout, /<html lang="ru"/i);
   assert.match(gateway, /РУКОПОЖАТИЕ ТЕНЕВОГО ХОСТА/);
   assert.match(gateway, /ПУБЛИЧНАЯ РЕГИСТРАЦИЯ:\s*ОТКЛЮЧЕНА/);
   assert.match(gateway, /назначенный псевдоним/i);
   assert.match(page, /route === "login"/);
+  assert.match(page, /<ZeroTerm/);
   assert.doesNotMatch(`${gateway}${layout}${page}${packageJson}`, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 

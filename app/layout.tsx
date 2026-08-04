@@ -7,7 +7,7 @@ import "./globals.css";
 const interfaceSans = Inter({ variable: "--font-interface", subsets: ["cyrillic", "latin"] });
 const terminalMono = IBM_Plex_Mono({ variable: "--font-terminal", subsets: ["cyrillic", "latin"], weight: ["400", "500", "600"] });
 
-const description = "Закрытый узел Матрицы: теневые контракты, защищённые каналы и рынки Дождливого города.";
+const description = "ZERO/TERM — нелегальная текстовая BBS для теневых контрактов, мёртвых каналов и безымянных раннеров.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
@@ -23,18 +23,18 @@ export async function generateMetadata(): Promise<Metadata> {
   const socialImage = new URL("/og.png", metadataBase).toString();
   return {
     metadataBase,
-    title: { default: "ShadowGrid // Хост Дождливого города", template: "%s // ShadowGrid" },
+    title: { default: "ZERO/TERM // ShadowGrid", template: "%s // ZERO/TERM" },
     description,
     applicationName: "ShadowGrid",
     robots: { index: false, follow: false },
     openGraph: {
-      title: "ShadowGrid // Хост Дождливого города",
+      title: "ZERO/TERM // ShadowGrid",
       description,
       siteName: "ShadowGrid",
       type: "website",
-      images: [{ url: socialImage, width: 1760, height: 900, alt: "Терминальный интерфейс частного теневого хоста ShadowGrid" }],
+      images: [{ url: socialImage, width: 1760, height: 900, alt: "Фосфорный BBS-терминал ZERO/TERM сети ShadowGrid" }],
     },
-    twitter: { card: "summary_large_image", title: "ShadowGrid // Хост Дождливого города", description, images: [socialImage] },
+    twitter: { card: "summary_large_image", title: "ZERO/TERM // ShadowGrid", description, images: [socialImage] },
   };
 }
 
@@ -42,7 +42,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   colorScheme: "dark",
-  themeColor: "#0a0c0b",
+  themeColor: "#010300",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
